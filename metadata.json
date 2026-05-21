@@ -1,0 +1,8 @@
+{
+  "name": "Nông Nghiệp Thông Minh",
+  "description": "Trang web bán hàng chuyên cung cấp thiết bị điện, nước, dụng cụ kim khí, ống nước, bét phun và hệ thống tưới tự động thông minh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
