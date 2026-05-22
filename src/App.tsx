@@ -144,6 +144,7 @@ export default function App() {
           product={selectedProduct} 
           onBack={() => handleNavigate('home', false)} 
           onAddToCart={handleAddToCart}
+          onNavigate={handleNavigate}
         />
       );
     }
