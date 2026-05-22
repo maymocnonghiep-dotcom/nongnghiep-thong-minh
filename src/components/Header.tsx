@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { Product } from '../types';
 import { getHighResImageUrl } from '../utils';
+import Link from './Link';
 
 interface HeaderProps {
   onNavigate: (view: string) => void;
@@ -29,11 +30,11 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
     : [];
 
   const menuItems = [
-    { label: 'Danh mục sản phẩm', value: 'categories', hasDropdown: true },
-    { label: 'Chương trình khuyến mãi', value: 'promotions' },
-    { label: 'Khách hàng & Đối tác', value: 'customers' },
-    { label: 'Dịch vụ', value: 'services' },
-    { label: 'Tin tức', value: 'news' },
+    { label: 'Danh mục sản phẩm', value: 'categories', to: '/danh-muc', hasDropdown: true },
+    { label: 'Chương trình khuyến mãi', value: 'promotions', to: '/khuyen-mai' },
+    { label: 'Khách hàng & Đối tác', value: 'customers', to: '/khach-hang' },
+    { label: 'Dịch vụ', value: 'services', to: '/dich-vu' },
+    { label: 'Tin tức', value: 'news', to: '/tin-tuc' },
   ];
 
   const categories = [
@@ -248,9 +249,9 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                 onMouseEnter={() => item.hasDropdown && setIsDropdownOpen(true)}
                 onMouseLeave={() => item.hasDropdown && setIsDropdownOpen(false)}
               >
-                <button 
+                <Link 
+                  to={item.to}
                   onClick={() => {
-                    onNavigate(item.value);
                     if (item.hasDropdown) setIsDropdownOpen(false);
                   }}
                   className={`flex items-center gap-1 py-4 text-sm font-bold uppercase transition-colors border-b-2 ${
@@ -261,7 +262,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                 >
                   {item.label}
                   {item.hasDropdown && <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />}
-                </button>
+                </Link>
 
                 {/* Mega Menu Dropdown */}
                 {item.hasDropdown && (
@@ -429,22 +430,24 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
 
             <ul className="space-y-4">
               <li className="border-b border-slate-100 pb-2">
-                <button onClick={() => { onNavigate('home'); setIsMenuOpen(false); }} className="text-lg font-bold text-slate-800">Trang chủ</button>
+                <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-800 hover:text-brand-primary block">Trang chủ</Link>
               </li>
               {menuItems.map((item) => (
                 <li key={item.value} className="border-b border-slate-100 pb-2">
                   <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => {
-                        if (!item.hasDropdown) {
-                          onNavigate(item.value);
-                          setIsMenuOpen(false);
-                        }
-                      }} 
-                      className={`text-lg font-bold ${item.hasDropdown ? 'text-slate-400' : 'text-slate-800 hover:text-brand-primary'}`}
-                    >
-                      {item.label}
-                    </button>
+                    {item.hasDropdown ? (
+                      <span className="text-lg font-bold text-slate-400">
+                        {item.label}
+                      </span>
+                    ) : (
+                      <Link 
+                        to={item.to}
+                        onClick={() => setIsMenuOpen(false)} 
+                        className="text-lg font-bold text-slate-800 hover:text-brand-primary block"
+                      >
+                        {item.label}
+                      </Link>
+                    )}
                     {item.hasDropdown && (
                       <ul className="pl-4 space-y-2 mt-2">
                         {categories.map(cat => (

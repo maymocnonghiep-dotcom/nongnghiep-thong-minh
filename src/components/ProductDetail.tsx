@@ -20,14 +20,59 @@ const mainCategories = [
   'Đèn năng lượng mặt trời',
 ];
 
-const solarSubcategories = [
-  { name: 'Đèn trong nhà', keyword: 'trong nhà' },
-  { name: 'Đèn pha', keyword: 'pha' },
-  { name: 'Đèn bàn chải', keyword: 'bàn chải' },
-  { name: 'Đèn liền thể', keyword: 'liền thể' },
-  { name: 'Linh kiện phụ kiện', keyword: 'phụ kiện' },
-  { name: 'Quạt', keyword: 'quạt' },
-];
+const subcategoriesMap: Record<string, { name: string; keywords: string[] }[]> = {
+  'Thiết bị tưới': [
+    { name: 'Béc & Phun mưa, Phun sương', keywords: ['bét', 'béc', 'phun', 'sương', 'màn sương'] },
+    { name: 'Tưới nhỏ giọt & Bù áp', keywords: ['nhỏ giọt', 'bù áp'] },
+    { name: 'Dây tưới & Ống dẫn', keywords: ['dây tưới dẹt', 'ống dẫn', 'dây tưới', 'ống ldpe'] },
+    { name: 'Hẹn giờ & Van tự động', keywords: ['hẹn giờ', 'van', 'lọc rác', 'châm phân'] },
+    { name: 'Phụ kiện kết nối ống', keywords: ['nối thẳng', 'que cắm', 'phụ kiện kết nối', 'ldpe'] },
+  ],
+  'Đồ điện': [
+    { name: 'Máy bơm nước', keywords: ['bơm'] },
+    { name: 'Tủ điện & Thiết bị bảo vệ', keywords: ['tủ điện', 'bảo vệ', 'contactor', 'aptomat', 'rơ le', 'cầu dao', 'ổ cắm', 'quá tải', 'chống giật', 'mcb'] },
+    { name: 'Hẹn giờ & Điều khiển', keywords: ['hẹn giờ', 'điều khiển', 'timer', 'cảm biến', 'plc', 'iot'] },
+    { name: 'Cáp điện & Đèn chiếu sáng', keywords: ['cáp', 'led', 'đèn', 'dây cáp'] },
+    { name: 'Thông gió & Khác', keywords: ['thông gió', 'biến tần'] },
+  ],
+  'Vật tư nước': [
+    { name: 'Ống nước PVC & HDPE', keywords: ['ống nhựa pvc', 'ống hdpe', 'ống luồn'] },
+    { name: 'Khóa nước & Van nước', keywords: ['van', 'khóa water'] },
+    { name: 'Phụ kiện co, Tê, Nối', keywords: ['co 90', 'tê chia 3', 'măng sông', 'nối trơn', 'rắc co', 'chuyển đổi', 'đầu lớn'] },
+    { name: 'Băng tan & Keo dán', keywords: ['keo dán', 'băng tan', 'chống rò rỉ'] },
+    { name: 'Bồn chứa & Phụ kiện máy bơm', keywords: ['bồn chứa', 'chõ bơm', 'rọ hút'] },
+  ],
+  'Dụng cụ làm vườn': [
+    { name: 'Kéo cắt tỉa & Dao ghép cành', keywords: ['kéo', 'dao', 'ghép', 'cưa'] },
+    { name: 'Cuốc, Xẻng & Cào đất', keywords: ['cuốc', 'xẻng', 'bay', 'cào'] },
+    { name: 'Máy cắt cỏ & Bình phun pin', keywords: ['máy cắt', 'bình phun', 'pin 18v'] },
+    { name: 'Sọt nhựa, Xe đẩy & Lưới che', keywords: ['rổ', 'sọt', 'xe rùa', 'thùng', 'xe đẩy', 'lưới', 'nhựa', 'khay ươm', 'độ che'] },
+  ],
+  'Camera An Ninh': [
+    { name: 'Camera Wifi Ngoài Trời', keywords: ['ngoài trời', 'imou', 'ezviz'] },
+    { name: 'Camera Wifi Trong Nhà', keywords: ['trong nhà', 'yoosee', 'đàm thoại', 'chuyển động'] },
+    { name: 'Camera Dùng SIM 4G', keywords: ['4g'] },
+    { name: 'Camera Năng Lượng Mặt Trời', keywords: ['giám sát năng lượng', 'solar'] },
+  ],
+  'Đèn năng lượng mặt trời': [
+    { name: 'Đèn trong nhà', keywords: ['trong nhà'] },
+    { name: 'Đèn pha', keywords: ['pha'] },
+    { name: 'Đèn bàn chải', keywords: ['bàn chải'] },
+    { name: 'Đèn liền thể', keywords: ['liền thể'] },
+    { name: 'Linh kiện phụ kiện', keywords: ['phụ kiện'] },
+    { name: 'Quạt năng lượng', keywords: ['quạt'] },
+  ],
+};
+
+const getMatchedSubcategory = (productName: string, subcategories: { name: string; keywords: string[] }[]) => {
+  const nameLower = productName.toLowerCase();
+  for (const sub of subcategories) {
+    if (sub.keywords.some(kw => nameLower.includes(kw.toLowerCase()))) {
+      return sub.name;
+    }
+  }
+  return null;
+};
 
 export default function ProductDetail({ product, onBack, onAddToCart, onNavigate }: ProductDetailProps) {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -106,19 +151,27 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                         </span>
                       </button>
 
-                      {/* Expandable subcategories for Solar Lights */}
-                      {isCurrentGroup && cat === 'Đèn năng lượng mặt trời' && (
-                        <ul className="pl-4 py-1.5 border-l border-slate-100 ml-3 flex flex-col gap-1 mt-1">
-                          {solarSubcategories.map((subcat) => {
-                            const isCurrentSub = product.name.toLowerCase().includes(subcat.keyword.toLowerCase()) ||
-                                                 (subcat.name === 'Đèn pha' && product.name.toLowerCase().includes('pha'));
+                      {/* Dynamic Expandable subcategories for the active group */}
+                      {isCurrentGroup && subcategoriesMap[cat] && (
+                        <ul className="pl-4 py-1.5 border-l border-slate-200 ml-3 flex flex-col gap-1 mt-1">
+                          {subcategoriesMap[cat].map((subcat) => {
+                            const matchedSub = getMatchedSubcategory(product.name, subcategoriesMap[cat]);
+                            const isCurrentSub = matchedSub === subcat.name;
+                            
+                            // For navigation, if it's Camera An Ninh, map it perfectly with existing subcategories
+                            let navigateView = `category-${cat}`;
+                            if (cat === 'Camera An Ninh') {
+                              const subId = subcat.keywords[1] || subcat.keywords[0]; 
+                              navigateView = `category-${cat}::${subId}`;
+                            }
+
                             return (
                               <li key={subcat.name}>
                                 <button
-                                  onClick={() => onNavigate?.(`category-Đèn năng lượng mặt trời`)}
+                                  onClick={() => onNavigate?.(navigateView)}
                                   className={`w-full text-left py-1.5 px-3 text-xs rounded-lg transition-all truncate cursor-pointer ${
                                     isCurrentSub
-                                      ? 'text-brand-secondary font-bold bg-brand-secondary/5 border-l-[3px] border-brand-primary pl-2'
+                                      ? 'text-brand-primary font-black bg-brand-primary/5 border-l-[3px] border-brand-primary pl-2'
                                       : 'text-slate-500 hover:text-brand-primary hover:bg-slate-50/40 pl-2'
                                   }`}
                                 >

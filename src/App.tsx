@@ -108,10 +108,32 @@ export default function App() {
     setScrollPos(window.scrollY);
     setSelectedProduct(product);
     setCurrentView('product-detail');
+    
+    const newPath = `/san-pham/${product.id}`;
+    if (window.location.pathname !== newPath) {
+      window.history.pushState(null, '', newPath);
+    }
+    
     window.scrollTo(0, 0);
   };
 
   const handleNavigate = (view: string, resetScroll = true) => {
+    let path = '/';
+    if (view === 'home') path = '/';
+    else if (view === 'categories') path = '/danh-muc';
+    else if (view === 'promotions') path = '/khuyen-mai';
+    else if (view === 'services') path = '/dich-vu';
+    else if (view === 'customers') path = '/khach-hang';
+    else if (view === 'news') path = '/tin-tuc';
+    else if (view === 'admin') path = '/admin';
+    else if (view.startsWith('category-')) {
+      path = `/danh-muc/${encodeURIComponent(view.replace('category-', ''))}`;
+    }
+    
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path);
+    }
+
     setCurrentView(view);
     setSelectedProduct(null);
     setAdminLoginError(null);
@@ -120,6 +142,56 @@ export default function App() {
       setScrollPos(0);
     }
   };
+
+  // Browser navigation popstate event hook
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      
+      if (path === '/') {
+        setCurrentView('home');
+        setSelectedProduct(null);
+      } else if (path === '/danh-muc') {
+        setCurrentView('categories');
+        setSelectedProduct(null);
+      } else if (path === '/khuyen-mai') {
+        setCurrentView('promotions');
+        setSelectedProduct(null);
+      } else if (path === '/dich-vu') {
+        setCurrentView('services');
+        setSelectedProduct(null);
+      } else if (path === '/khach-hang') {
+        setCurrentView('customers');
+        setSelectedProduct(null);
+      } else if (path === '/tin-tuc') {
+        setCurrentView('news');
+        setSelectedProduct(null);
+      } else if (path === '/admin') {
+        setCurrentView('admin');
+        setSelectedProduct(null);
+      } else if (path.startsWith('/danh-muc/')) {
+        const groupRaw = decodeURIComponent(path.replace('/danh-muc/', ''));
+        setCurrentView(`category-${groupRaw}`);
+        setSelectedProduct(null);
+      } else if (path.startsWith('/san-pham/')) {
+        const prodId = path.replace('/san-pham/', '');
+        if (products.length > 0) {
+          const found = products.find(p => p.id === prodId || p.sku === prodId);
+          if (found) {
+            setSelectedProduct(found);
+            setCurrentView('product-detail');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Always call initially to sync view on page load
+    handlePopState();
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [products]);
 
   const handleAdminLogin = (password: string) => {
     setIsLoggingIn(true);
