@@ -2,6 +2,7 @@ import { Droplets, Zap, Wrench, Pipette as Pipe, ArrowRight, Loader2, Camera, Su
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product } from '../types';
+import { getHighResImageUrl } from '../utils';
 
 interface CategoryGridProps {
   onNavigate: (view: string) => void;
@@ -80,7 +81,7 @@ export default function CategoryGrid({ onNavigate, products }: CategoryGridProps
                           onClick={() => onNavigate(`category-${cat.name}`)} // Simple for now, ideally navigate to product detail
                         >
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0">
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                            <img src={getHighResImageUrl(product.image)} alt={product.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-slate-700 truncate group-hover/item:text-brand-primary">{product.name}</p>

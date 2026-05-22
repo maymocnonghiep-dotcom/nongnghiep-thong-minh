@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShoppingCart, Heart, Info } from 'lucide-react';
 import { Product } from '../types';
+import { getHighResImageUrl } from '../utils';
 
 interface ProductCardProps {
   product: Product;
@@ -17,7 +18,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onAddToCart
       {/* Product Image */}
       <div className="w-full aspect-square relative overflow-hidden bg-slate-50 shrink-0 rounded-xl border border-slate-100 mb-3">
         <img 
-          src={product.image} 
+          src={getHighResImageUrl(product.image)} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           referrerPolicy="no-referrer"

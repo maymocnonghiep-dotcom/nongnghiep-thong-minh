@@ -2,6 +2,7 @@ import { Search, ShoppingCart, User, Menu, Phone, Mail, ChevronDown, ArrowRight,
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { Product } from '../types';
+import { getHighResImageUrl } from '../utils';
 
 interface HeaderProps {
   onNavigate: (view: string) => void;
@@ -185,7 +186,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                           className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 transition-colors rounded-xl text-left group/res"
                         >
                           <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                            <img src={getHighResImageUrl(product.image)} alt={product.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 overflow-hidden">
                             <h4 className="text-sm font-bold text-slate-800 truncate group-hover/res:text-brand-primary transition-colors">{product.name}</h4>
@@ -415,7 +416,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                       }}
                       className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg text-left"
                     >
-                      <img src={product.image} alt={product.name} className="w-10 h-10 rounded object-cover" />
+                      <img src={getHighResImageUrl(product.image)} alt={product.name} className="w-10 h-10 rounded object-cover" />
                       <div className="min-w-0">
                         <p className="text-xs font-bold truncate">{product.name}</p>
                         <p className="text-[10px] text-brand-primary font-bold">{product.price.toLocaleString('vi-VN')}đ</p>

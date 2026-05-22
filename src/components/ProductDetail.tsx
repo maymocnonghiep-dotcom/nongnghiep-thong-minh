@@ -1,6 +1,7 @@
 import { Product } from '../types';
 import { Star, ShoppingCart, ArrowLeft, Check } from 'lucide-react';
 import { motion } from 'motion/react';
+import { getHighResImageUrl } from '../utils';
 
 interface ProductDetailProps {
   product: Product;
@@ -26,7 +27,7 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
             animate={{ opacity: 1, x: 0 }}
             className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50"
           >
-            <img src={product.image} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" alt={product.name} />
+            <img src={getHighResImageUrl(product.image)} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" alt={product.name} />
           </motion.div>
 
           {/* Info */}

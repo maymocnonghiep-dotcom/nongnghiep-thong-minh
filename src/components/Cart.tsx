@@ -2,6 +2,7 @@ import { CartItem } from '../types';
 import { ShoppingCart, X, Plus, Minus, Trash2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState } from 'react';
+import { getHighResImageUrl } from '../utils';
 
 interface CartProps {
   isOpen: boolean;
@@ -210,7 +211,7 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemov
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4 rounded-2xl border border-slate-50 hover:bg-slate-50 transition-colors group">
                       <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0">
-                        <img src={item.image} className="w-full h-full object-cover" />
+                        <img src={getHighResImageUrl(item.image)} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-grow">
                         <h4 className="font-bold text-slate-800 text-sm line-clamp-1 mb-1">{item.name}</h4>
