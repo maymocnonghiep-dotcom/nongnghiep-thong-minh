@@ -47,7 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onAddToCart
           <h3 className="font-sans font-bold text-slate-800 text-sm leading-tight line-clamp-2 group-hover:text-brand-primary transition-colors mb-1">
             {product.name}
           </h3>
-          <p className="text-[10px] text-slate-500 line-clamp-2 font-medium leading-relaxed">
+          <p className="text-[10px] text-slate-500 line-clamp-2 font-medium leading-relaxed whitespace-pre-line">
             {product.description}
           </p>
         </div>

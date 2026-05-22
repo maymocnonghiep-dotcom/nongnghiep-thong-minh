@@ -75,8 +75,15 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           const priceRaw = getVal(['Giá bán (VNĐ)', 'Giá bán', 'Giá', 'Price']);
           const price = typeof priceRaw === 'number' ? priceRaw : parseInt(String(priceRaw || '0').replace(/\D/g, '')) || 0;
           const unit = String(getVal(['Đơn vị', 'Unit']) || '').trim();
-          const description = String(getVal(['Mô tả', 'Description']) || '').trim();
-          const image = String(getVal(['Link hình ảnh', 'Hình ảnh', 'Image']) || '').trim() || 'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=500&q=80';
+          const rawDesc = String(getVal(['Mô tả', 'Description']) || '');
+          const description = rawDesc.replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+          let image = String(getVal(['Link hình ảnh', 'Hình ảnh', 'Image']) || '').trim() || 'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=1200&q=95';
+          if (image.includes('images.unsplash.com')) {
+            image = image.replace(/w=\d+/, 'w=1200').replace(/q=\d+/, 'q=95');
+            if (!image.includes('w=')) {
+              image += (image.includes('?') ? '&' : '?') + 'w=1200&q=95';
+            }
+          }
           
           const rawSpecs = String(getVal(['Thông số kỹ thuật', 'Thông số', 'Specs']) || '').trim();
           const specs: { [key: string]: string } = {};

@@ -79,7 +79,7 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
 
             <div className="mb-8">
               <h3 className="font-bold text-slate-800 mb-4 uppercase text-sm tracking-widest">Mô tả sản phẩm</h3>
-              <p className="text-slate-600 leading-relaxed italic">
+              <p className="text-slate-600 leading-relaxed italic whitespace-pre-wrap">
                 {product.description}
               </p>
             </div>
