@@ -24,9 +24,9 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm"
+            className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50 flex items-center justify-center p-4"
           >
-            <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
+            <img src={product.image} className="max-w-full max-h-full object-contain transition-transform duration-300 hover:scale-105" alt={product.name} />
           </motion.div>
 
           {/* Info */}
@@ -73,7 +73,7 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
                     {product.price.toLocaleString('vi-VN')} ₫ {product.unit && <span className="text-base text-slate-400 font-normal">/ {product.unit}</span>}
                   </div>
                 </div>
-                <p className="text-slate-600 text-sm italic">Giá đã bao gồm VAT. Bảo hành chính hãng 12 tháng.</p>
+                <p className="text-slate-600 text-sm italic">Giá chưa bao gồm VAT.</p>
               </div>
             </div>
 
