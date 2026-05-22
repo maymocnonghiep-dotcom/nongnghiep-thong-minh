@@ -35,11 +35,48 @@ export default function App() {
     }
   }, [currentView]);
 
-  useEffect(() => {
+  const fetchAndMergeProducts = () => {
     fetch('/api/products')
-      .then(res => res.json())
-      .then(data => setProducts(data))
-      .catch(err => console.error('Error fetching products:', err));
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Server returned non-OK code');
+        }
+        return res.json();
+      })
+      .then(data => {
+        const localStr = localStorage.getItem('local_products');
+        let localProds: Product[] = [];
+        if (localStr) {
+          try {
+            localProds = JSON.parse(localStr);
+          } catch (e) {
+            localProds = [];
+          }
+        }
+        const merged = [...data];
+        localProds.forEach(lp => {
+          const idx = merged.findIndex(p => p.sku === lp.sku);
+          if (idx !== -1) {
+            merged[idx] = lp;
+          } else {
+            merged.push(lp);
+          }
+        });
+        setProducts(merged);
+      })
+      .catch(err => {
+        console.error('Error fetching products, falling back to local products:', err);
+        const localStr = localStorage.getItem('local_products');
+        if (localStr) {
+          try {
+            setProducts(JSON.parse(localStr));
+          } catch (e) {}
+        }
+      });
+  };
+
+  useEffect(() => {
+    fetchAndMergeProducts();
   }, []);
 
   const handleAddToCart = (product: Product) => {
@@ -130,12 +167,7 @@ export default function App() {
               setIsAdminAuthenticated(false);
               handleNavigate('home');
             }}
-            onRefreshProducts={() => {
-              fetch('/api/products')
-                .then(res => res.json())
-                .then(data => setProducts(data))
-                .catch(err => console.error('Error fetching products inside AdminPanel callback:', err));
-            }}
+            onRefreshProducts={fetchAndMergeProducts}
           />
         );
       case 'categories':
@@ -170,6 +202,7 @@ export default function App() {
                   <ArrowRight size={18} className="rotate-180" /> Quay lại trang chủ
                 </button>
                 <FeaturedProducts 
+                   products={products}
                    onProductClick={handeProductClick} 
                    onAddToCart={handleAddToCart}
                    categoryFilter={group}

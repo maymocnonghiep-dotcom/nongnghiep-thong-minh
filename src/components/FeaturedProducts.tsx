@@ -8,14 +8,15 @@ interface FeaturedProductsProps {
   onAddToCart: (product: Product) => void;
   categoryFilter?: string;
   initialSubcategory?: string;
+  products?: Product[];
 }
 
 type SortOption = 'price-asc' | 'price-desc' | 'discount-desc';
 
-export default function FeaturedProducts({ onProductClick, onAddToCart, categoryFilter, initialSubcategory }: FeaturedProductsProps) {
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+export default function FeaturedProducts({ onProductClick, onAddToCart, categoryFilter, initialSubcategory, products }: FeaturedProductsProps) {
+  const [allProducts, setAllProducts] = useState<Product[]>(products || []);
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!products || products.length === 0);
   const [currentPage, setCurrentPage] = useState(1);
   const [cameraSubcategory, setCameraSubcategory] = useState<string>('all');
 
@@ -53,13 +54,50 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
   };
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => {
-        setAllProducts(data);
-        setLoading(false);
-      });
-  }, []);
+    if (products && products.length > 0) {
+      setAllProducts(products);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      fetch('/api/products')
+        .then(res => {
+          if (!res.ok) throw new Error('Not OK');
+          return res.json();
+        })
+        .then(data => {
+          const localStr = localStorage.getItem('local_products');
+          let localProds: Product[] = [];
+          if (localStr) {
+            try {
+              localProds = JSON.parse(localStr);
+            } catch (e) {
+              localProds = [];
+            }
+          }
+          const merged = [...data];
+          localProds.forEach(lp => {
+            const idx = merged.findIndex(p => p.sku === lp.sku);
+            if (idx !== -1) {
+              merged[idx] = lp;
+            } else {
+              merged.push(lp);
+            }
+          });
+          setAllProducts(merged);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.warn("Could not fetch products, reading local:", err);
+          const localStr = localStorage.getItem('local_products');
+          if (localStr) {
+            try {
+              setAllProducts(JSON.parse(localStr));
+            } catch (e) {}
+          }
+          setLoading(false);
+        });
+    }
+  }, [products]);
 
   useEffect(() => {
     setCurrentPage(1);
