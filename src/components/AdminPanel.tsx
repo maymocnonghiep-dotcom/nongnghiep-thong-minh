@@ -120,7 +120,14 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           body: JSON.stringify(parsedProducts)
         });
 
-        const result = await response.json();
+        let result;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          result = await response.json();
+        } else {
+          const textError = await response.text();
+          throw new Error(textError.substring(0, 200) || `Lỗi từ hệ thống (Mã lỗi: ${response.status})`);
+        }
         
         setIsImporting(false);
         if (result.success) {

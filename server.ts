@@ -903,7 +903,8 @@ async function startServer() {
   const orders: any[] = [];
 
   // Middleware
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Routes
   app.get("/api/products", (req, res) => {
@@ -911,39 +912,63 @@ async function startServer() {
   });
 
   app.post("/api/admin/products/import", (req, res) => {
-    const importedProducts = req.body;
-    if (!Array.isArray(importedProducts)) {
-      return res.status(400).json({ success: false, message: "Dữ liệu nhập hàng không đúng định dạng danh sách." });
-    }
-
-    let added = 0;
-    let updated = 0;
-
-    importedProducts.forEach((newProd: any) => {
-      const idx = products.findIndex(p => p.sku.trim().toLowerCase() === newProd.sku.trim().toLowerCase());
-      if (idx !== -1) {
-        // Update product preserving reviews
-        products[idx] = {
-          ...products[idx],
-          ...newProd,
-          reviews: products[idx].reviews || []
-        };
-        updated++;
-      } else {
-        // Add new item
-        products.push({
-          ...newProd,
-          id: newProd.id || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-        });
-        added++;
+    try {
+      const importedProducts = req.body;
+      if (!Array.isArray(importedProducts)) {
+        return res.status(400).json({ success: false, message: "Dữ liệu nhập hàng không đúng định dạng danh sách." });
       }
-    });
 
-    res.json({
-      success: true,
-      message: `Nhập dữ liệu thành công! Thêm mới ${added} sản phẩm, cập nhật ${updated} sản phẩm. Các sản phẩm đã được phân loại vào đúng nhóm hàng tương ứng.`,
-      count: importedProducts.length
-    });
+      let added = 0;
+      let updated = 0;
+
+      importedProducts.forEach((newProd: any) => {
+        if (!newProd) return;
+        
+        // Ensure sku exists and is safe to use
+        const skuRaw = newProd.sku !== undefined && newProd.sku !== null ? String(newProd.sku).trim() : "";
+        if (!skuRaw) {
+          // Skip products with empty SKU (e.g., blank rows in Excel)
+          return;
+        }
+
+        const newSkuLower = skuRaw.toLowerCase();
+        const idx = products.findIndex(p => {
+          if (!p || p.sku === undefined || p.sku === null) return false;
+          return String(p.sku).trim().toLowerCase() === newSkuLower;
+        });
+
+        if (idx !== -1) {
+          // Update product preserving reviews
+          products[idx] = {
+            ...products[idx],
+            ...newProd,
+            sku: skuRaw, // preserve sanitized SKU
+            reviews: products[idx].reviews || []
+          };
+          updated++;
+        } else {
+          // Add new item
+          products.push({
+            ...newProd,
+            sku: skuRaw,
+            id: newProd.id || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+          });
+          added++;
+        }
+      });
+
+      res.json({
+        success: true,
+        message: `Nhập dữ liệu thành công! Thêm mới ${added} sản phẩm, cập nhật ${updated} sản phẩm. Các sản phẩm đã được phân loại vào đúng nhóm nhóm tương ứng.`,
+        count: importedProducts.length
+      });
+    } catch (error: any) {
+      console.error("Error during product import:", error);
+      res.status(500).json({
+        success: false,
+        message: `Đã xảy ra lỗi trên hệ thống khi xử lý file: ${error.message || "Lỗi không xác định"}`
+      });
+    }
   });
 
   app.get("/api/categories", (req, res) => {
