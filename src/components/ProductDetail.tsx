@@ -24,9 +24,9 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50 flex items-center justify-center p-4"
+            className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50"
           >
-            <img src={product.image} className="max-w-full max-h-full object-contain transition-transform duration-300 hover:scale-105" alt={product.name} />
+            <img src={product.image} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" alt={product.name} />
           </motion.div>
 
           {/* Info */}
@@ -78,39 +78,43 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
             </div>
 
             <div className="mb-8">
-              <h3 className="font-bold text-slate-800 mb-4 uppercase text-sm tracking-widest">Mô tả sản phẩm</h3>
-              <p className="text-slate-600 leading-relaxed italic whitespace-pre-wrap">
-                {product.description}
-              </p>
+              <h3 className="font-bold text-slate-800 mb-4 uppercase text-xs tracking-widest flex items-center gap-1.5 font-sans">
+                <Check size={16} className="text-brand-primary" /> Thông số kỹ thuật
+              </h3>
+              <div className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100">
+                <table className="w-full text-xs">
+                  <tbody>
+                    {Object.entries(product.specs).map(([key, value], idx) => (
+                      <tr key={key} className={idx % 2 === 0 ? 'bg-white/50 border-b border-slate-100/50' : 'border-b border-slate-100/50'}>
+                        <td className="px-4 py-2 font-bold text-slate-500 w-1/3">{key}</td>
+                        <td className="px-4 py-2 text-slate-800 font-medium">{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <button 
               onClick={() => onAddToCart(product)}
-              className="mt-auto bg-brand-primary hover:bg-brand-primary/90 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/20 transition-all active:scale-95"
+              className="mt-6 bg-brand-primary hover:bg-brand-primary/90 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/20 transition-all active:scale-95"
             >
               <ShoppingCart size={24} /> Thêm vào giỏ hàng
             </button>
           </motion.div>
         </div>
 
-        {/* Specs & Reviews */}
+        {/* Specs & Reviews - Swapped Specs with Description */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-12 border-t border-slate-100">
-          {/* Specs */}
+          {/* Description */}
           <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-6 not-italic font-sans flex items-center gap-2">
-              <Check className="text-brand-primary" /> Thông số kỹ thuật
+            <h3 className="text-xl font-bold text-slate-900 mb-6 not-italic font-sans">
+              Mô tả sản phẩm
             </h3>
-            <div className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100">
-              <table className="w-full text-sm">
-                <tbody>
-                  {Object.entries(product.specs).map(([key, value], idx) => (
-                    <tr key={key} className={idx % 2 === 0 ? 'bg-white/50' : ''}>
-                      <td className="px-6 py-4 font-bold text-slate-500 w-1/3">{key}</td>
-                      <td className="px-6 py-4 text-slate-800 font-medium">{value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+              <p className="text-slate-600 leading-relaxed italic whitespace-pre-wrap">
+                {product.description}
+              </p>
             </div>
           </div>
 
