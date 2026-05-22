@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Product } from '../types';
 import { Star, ShoppingCart, ArrowLeft, Check } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -10,6 +11,16 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ product, onBack, onAddToCart }: ProductDetailProps) {
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const [isZooming, setIsZooming] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({ x, y });
+  };
+
   return (
     <div className="bg-white min-h-screen pt-24 pb-20">
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
@@ -25,9 +36,28 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50"
+            className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50 relative group cursor-zoom-in"
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsZooming(true)}
+            onMouseLeave={() => setIsZooming(false)}
           >
-            <img src={getHighResImageUrl(product.image)} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" alt={product.name} />
+            <img 
+              src={getHighResImageUrl(product.image)} 
+              className="w-full h-full object-cover" 
+              style={{
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                transform: isZooming ? 'scale(2.2)' : 'scale(1)',
+                transition: isZooming ? 'none' : 'transform 0.2s ease-out, transform-origin 0.2s ease-out',
+              }}
+              alt={product.name} 
+            />
+            {/* Visual Indicator Overlay */}
+            {!isZooming && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/85 backdrop-blur-md text-white text-xs py-2 px-4 rounded-full flex items-center gap-2 shadow-lg transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:scale-105 pointer-events-none">
+                <span className="text-sm">🔍</span>
+                <span className="font-medium tracking-wide">Rê chuột vào ảnh để phóng to chi tiết</span>
+              </div>
+            )}
           </motion.div>
 
           {/* Info */}
