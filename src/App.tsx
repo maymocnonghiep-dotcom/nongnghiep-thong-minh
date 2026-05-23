@@ -13,6 +13,7 @@ import Cart from './components/Cart';
 import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
 import PolicyView from './components/PolicyView';
+import ConsultModal from './components/ConsultModal';
 import { Product, CartItem } from './types';
 import { ShieldCheck, Truck, Clock, Headphones, ArrowRight } from 'lucide-react';
 
@@ -26,6 +27,7 @@ export default function App() {
   const [adminLoginError, setAdminLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [scrollPos, setScrollPos] = useState(0);
+  const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
 
   useEffect(() => {
     if (currentView === 'home' && scrollPos > 0) {
@@ -369,9 +371,12 @@ export default function App() {
                     <span className="text-brand-accent">Tưới Thông Minh?</span>
                   </h2>
                   <p className="text-blue-100 mb-8 text-lg">
-                    Để lại thông tin, đội ngũ kỹ thuật của chúng tôi sẽ liên hệ khảo sát và tư vấn trực tiếp cho trang trại của bạn.
+                    Để lại thông tin số điện thoại, đội ngũ kỹ thuật của chúng tôi sẽ liên hệ tư vấn và khảo sát trực tiếp khu vườn của Chú/Bác.
                   </p>
-                  <button className="bg-white text-brand-secondary px-8 py-3 rounded-full font-bold hover:bg-brand-accent hover:text-white transition-all">
+                  <button 
+                    onClick={() => setIsConsultModalOpen(true)}
+                    className="bg-white text-brand-secondary px-8 py-3 rounded-full font-bold hover:bg-brand-accent hover:text-white transition-all cursor-pointer"
+                  >
                     Đăng ký tư vấn ngay
                   </button>
                 </div>
@@ -467,6 +472,11 @@ export default function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemove={handleRemoveFromCart}
         onClear={() => setCartItems([])}
+      />
+
+      <ConsultModal 
+        isOpen={isConsultModalOpen}
+        onClose={() => setIsConsultModalOpen(false)}
       />
 
       <Footer onAdminClick={() => handleNavigate('admin')} />

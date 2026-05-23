@@ -901,7 +901,29 @@ async function startServer() {
     }
   ];
 
-  const orders: any[] = [];
+  let orders: any[] = [];
+  let consultations: any[] = [];
+
+  const ordersDbPath = path.join(process.cwd(), "orders_db.json");
+  const consultationsDbPath = path.join(process.cwd(), "consultations_db.json");
+
+  try {
+    if (fs.existsSync(ordersDbPath)) {
+      const content = fs.readFileSync(ordersDbPath, "utf-8");
+      orders = JSON.parse(content);
+    }
+  } catch (err) {
+    console.error("Failed to load orders:", err);
+  }
+
+  try {
+    if (fs.existsSync(consultationsDbPath)) {
+      const content = fs.readFileSync(consultationsDbPath, "utf-8");
+      consultations = JSON.parse(content);
+    }
+  } catch (err) {
+    console.error("Failed to load consultations:", err);
+  }
 
   // Local JSON Database initialization on server startup
   let activeProducts = [...products];
@@ -1024,6 +1046,13 @@ async function startServer() {
       createdAt: new Date().toISOString()
     };
     orders.push(newOrder);
+
+    // Save orders to db
+    try {
+      fs.writeFileSync(ordersDbPath, JSON.stringify(orders, null, 2), "utf-8");
+    } catch (saveErr) {
+      console.error("Failed to save orders to disk:", saveErr);
+    }
     
     // In a real application, you would use a service like SendGrid, Mailgun, or AWS SES
     // For this environment, we will use nodemailer if configured, otherwise fallback to logging.
@@ -1090,6 +1119,85 @@ async function startServer() {
 
     // Simulate success
     res.json({ success: true, message: "Order processed" });
+  });
+
+  // Consultations API Enpoints
+  app.post("/api/consultations", async (req, res) => {
+    try {
+      const { fullName, phone, province, district, area, farmModel } = req.body;
+      
+      if (!fullName || !phone) {
+        return res.status(400).json({ success: false, message: "Vui lòng nhập Họ tên và Số điện thoại!" });
+      }
+
+      const newConsultation = {
+        id: `CON-${Date.now()}`,
+        fullName,
+        phone,
+        province: province || "",
+        district: district || "",
+        area: area || "",
+        farmModel: farmModel || "",
+        status: "pending", // pending, completed
+        createdAt: new Date().toISOString()
+      };
+
+      consultations.unshift(newConsultation);
+
+      // Persist list
+      fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+
+      // Optional: send email to store owner
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        const emailBody = `
+          <h3>Yêu cầu tư vấn thiết kế sân vườn mới</h3>
+          <p><strong>Họ tên khách hàng:</strong> ${fullName}</p>
+          <p><strong>Số điện thoại:</strong> ${phone}</p>
+          <p><strong>Tỉnh/Thành phố:</strong> ${province || "Chưa cung cấp"}</p>
+          <p><strong>Quận/Huyện:</strong> ${district || "Chưa cung cấp"}</p>
+          <p><strong>Diện tích sân vườn:</strong> ${area || "Chưa cung cấp"}</p>
+          <p><strong>Mô hình trồng trọt:</strong> ${farmModel || "Chưa cung cấp"}</p>
+          <p><i>Yêu cầu này được gửi tự động bởi hệ thống Máy Móc Nông Nghiệp Thắng Lợi. Bà con đang đợi bạn tư vấn!</i></p>
+        `;
+        try {
+          await transporter.sendMail({
+            from: `"Yêu Cầu Tư Vấn" <${process.env.EMAIL_USER}>`,
+            to: "maymocnonghiep@gmail.com",
+            subject: `TƯ VẤN KHẢO SÁT: ${fullName} - ${phone}`,
+            html: emailBody
+          });
+          console.log("SUCCESS: Consultation Email sent successfully!");
+        } catch (emailErr) {
+          console.error("ERROR: Failed to send consultation email:", emailErr);
+        }
+      }
+
+      res.json({ success: true, message: "Đăng ký tư vấn thành công! Nhân viên kỹ thuật sẽ sớm liên hệ Chú/Bác." });
+    } catch (err) {
+      console.error("Error creating consultation:", err);
+      res.status(500).json({ success: false, message: "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau." });
+    }
+  });
+
+  app.get("/api/admin/consultations", (req, res) => {
+    res.json(consultations);
+  });
+
+  app.put("/api/admin/consultations/:id", (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const idx = consultations.findIndex(c => c.id === id);
+      if (idx !== -1) {
+        consultations[idx].status = status || "pending";
+        fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+        return res.json({ success: true, consultation: consultations[idx] });
+      }
+      res.status(404).json({ success: false, message: "Yêu cầu tư vấn không tồn tại." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: "Lỗi cập nhật trạng thái." });
+    }
   });
 
   // Vite middleware for development

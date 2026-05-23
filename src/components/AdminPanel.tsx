@@ -11,19 +11,57 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'import' | 'orders'>('orders');
+  const [activeTab, setActiveTab ] = useState<'import' | 'orders' | 'consultations'>('orders');
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string; count?: number } | null>(null);
   
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loadingOrders, setLoadingOrders ] = useState(false);
+  const [selectedOrder, setSelectedOrder ] = useState<Order | null>(null);
+
+  const [consultations, setConsultations] = useState<any[]>([]);
+  const [loadingConsultations, setLoadingConsultations] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'orders') {
       fetchOrders();
+    } else if (activeTab === 'consultations') {
+      fetchConsultations();
     }
   }, [activeTab]);
+
+  const fetchConsultations = () => {
+    setLoadingConsultations(true);
+    fetch('/api/admin/consultations')
+      .then(res => res.json())
+      .then(data => {
+        setConsultations(data);
+        setLoadingConsultations(false);
+      })
+      .catch(err => {
+        console.error('Error fetching consultations:', err);
+        setLoadingConsultations(false);
+      });
+  };
+
+  const handleUpdateConsultationStatus = (id: string, newStatus: string) => {
+    fetch(`/api/admin/consultations/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          fetchConsultations();
+        }
+      })
+      .catch(err => {
+        console.error('Error updating status:', err);
+      });
+  };
 
   const fetchOrders = () => {
     setLoadingOrders(true);
@@ -318,6 +356,17 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                 </span>
                 {activeTab === 'import' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />}
               </button>
+              <button 
+                onClick={() => setActiveTab('consultations')}
+                className={`px-6 py-3 font-bold text-sm transition-all relative ${
+                  activeTab === 'consultations' ? 'text-brand-primary' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Database size={18} /> Yêu cầu tư vấn ({consultations.length})
+                </span>
+                {activeTab === 'consultations' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />}
+              </button>
             </div>
 
             {activeTab === 'import' ? (
@@ -368,6 +417,94 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   </motion.div>
                 )}
               </>
+            ) : activeTab === 'consultations' ? (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 not-italic font-sans">
+                    <Database size={24} className="text-brand-primary" /> Yêu cầu tư vấn thiết kế vườn của Chú/Bác
+                  </h2>
+                  <button 
+                    onClick={fetchConsultations}
+                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand-primary transition-all cursor-pointer"
+                    title="Làm mới"
+                  >
+                    <ArrowLeft className="rotate-90" size={18} />
+                  </button>
+                </div>
+
+                {loadingConsultations ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-brand-primary border-t-transparent mb-4"></div>
+                    <p className="text-slate-400 font-medium font-sans">Đang tải danh sách yêu cầu tư vấn...</p>
+                  </div>
+                ) : consultations.length === 0 ? (
+                  <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100">
+                    <Database size={48} className="mx-auto text-slate-200 mb-4" />
+                    <p className="text-slate-500 font-bold font-sans">Chưa có yêu cầu tư vấn nào</p>
+                    <p className="text-slate-400 text-sm">Thông tin các Chú/Bác đăng ký tư vấn sẽ xuất hiện ở đây.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Mã yêu cầu</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Chú/Bác</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Địa chỉ</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Khu vườn (DT/Mô hình)</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Ngày đăng ký</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Trạng thái</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {consultations.map((item) => (
+                          <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                            <td className="p-4 font-mono text-[10px] font-bold text-slate-400">{item.id}</td>
+                            <td className="p-4">
+                              <div className="font-bold text-slate-800 text-sm">{item.fullName}</div>
+                              <div className="text-slate-600 font-bold text-xs">
+                                <a href={`tel:${item.phone}`} className="hover:underline text-brand-primary">{item.phone}</a>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-xs text-slate-500">{item.district || "---"}</div>
+                              <div className="text-[10px] text-slate-400 font-bold">{item.province || "---"}</div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-xs text-slate-800 font-semibold">DT: {item.area || "Chưa rõ"}</div>
+                              <div className="text-[10px] text-slate-500 italic">Mô hình: {item.farmModel || "Chưa rõ"}</div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-xs text-slate-500">{new Date(item.createdAt).toLocaleDateString('vi-VN')}</div>
+                              <div className="text-[10px] text-slate-400">{new Date(item.createdAt).toLocaleTimeString('vi-VN')}</div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter ${
+                                item.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {item.status === 'pending' ? 'Chờ liên hệ' : 'Đã tư vấn'}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                onClick={() => handleUpdateConsultationStatus(item.id, item.status === 'pending' ? 'completed' : 'pending')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                  item.status === 'pending' 
+                                    ? 'bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm' 
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                                }`}
+                              >
+                                {item.status === 'pending' ? 'Xử lý xong ✔' : 'Đặt lại Chờ ↺'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             ) : (
               <div>
                 <div className="flex items-center justify-between mb-6">
