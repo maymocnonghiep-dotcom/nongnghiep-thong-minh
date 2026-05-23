@@ -3,6 +3,7 @@ import { Product } from '../types';
 import { Star, ShoppingCart, ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getHighResImageUrl } from '../utils';
+import { subcategoriesMap, getMatchedSubcategory } from '../categoriesData';
 
 interface ProductDetailProps {
   product: Product;
@@ -19,60 +20,6 @@ const mainCategories = [
   'Camera An Ninh',
   'Đèn năng lượng mặt trời',
 ];
-
-const subcategoriesMap: Record<string, { name: string; keywords: string[] }[]> = {
-  'Thiết bị tưới': [
-    { name: 'Béc & Phun mưa, Phun sương', keywords: ['bét', 'béc', 'phun', 'sương', 'màn sương'] },
-    { name: 'Tưới nhỏ giọt & Bù áp', keywords: ['nhỏ giọt', 'bù áp'] },
-    { name: 'Dây tưới & Ống dẫn', keywords: ['dây tưới dẹt', 'ống dẫn', 'dây tưới', 'ống ldpe'] },
-    { name: 'Hẹn giờ & Van tự động', keywords: ['hẹn giờ', 'van', 'lọc rác', 'châm phân'] },
-    { name: 'Phụ kiện kết nối ống', keywords: ['nối thẳng', 'que cắm', 'phụ kiện kết nối', 'ldpe'] },
-  ],
-  'Đồ điện': [
-    { name: 'Máy bơm nước', keywords: ['bơm'] },
-    { name: 'Tủ điện & Thiết bị bảo vệ', keywords: ['tủ điện', 'bảo vệ', 'contactor', 'aptomat', 'rơ le', 'cầu dao', 'ổ cắm', 'quá tải', 'chống giật', 'mcb'] },
-    { name: 'Hẹn giờ & Điều khiển', keywords: ['hẹn giờ', 'điều khiển', 'timer', 'cảm biến', 'plc', 'iot'] },
-    { name: 'Cáp điện & Đèn chiếu sáng', keywords: ['cáp', 'led', 'đèn', 'dây cáp'] },
-    { name: 'Thông gió & Khác', keywords: ['thông gió', 'biến tần'] },
-  ],
-  'Vật tư nước': [
-    { name: 'Ống nước PVC & HDPE', keywords: ['ống nhựa pvc', 'ống hdpe', 'ống luồn'] },
-    { name: 'Khóa nước & Van nước', keywords: ['van', 'khóa water'] },
-    { name: 'Phụ kiện co, Tê, Nối', keywords: ['co 90', 'tê chia 3', 'măng sông', 'nối trơn', 'rắc co', 'chuyển đổi', 'đầu lớn'] },
-    { name: 'Băng tan & Keo dán', keywords: ['keo dán', 'băng tan', 'chống rò rỉ'] },
-    { name: 'Bồn chứa & Phụ kiện máy bơm', keywords: ['bồn chứa', 'chõ bơm', 'rọ hút'] },
-  ],
-  'Dụng cụ làm vườn': [
-    { name: 'Kéo cắt tỉa & Dao ghép cành', keywords: ['kéo', 'dao', 'ghép', 'cưa'] },
-    { name: 'Cuốc, Xẻng & Cào đất', keywords: ['cuốc', 'xẻng', 'bay', 'cào'] },
-    { name: 'Máy cắt cỏ & Bình phun pin', keywords: ['máy cắt', 'bình phun', 'pin 18v'] },
-    { name: 'Sọt nhựa, Xe đẩy & Lưới che', keywords: ['rổ', 'sọt', 'xe rùa', 'thùng', 'xe đẩy', 'lưới', 'nhựa', 'khay ươm', 'độ che'] },
-  ],
-  'Camera An Ninh': [
-    { name: 'Camera Wifi Ngoài Trời', keywords: ['ngoài trời', 'imou', 'ezviz'] },
-    { name: 'Camera Wifi Trong Nhà', keywords: ['trong nhà', 'yoosee', 'đàm thoại', 'chuyển động'] },
-    { name: 'Camera Dùng SIM 4G', keywords: ['4g'] },
-    { name: 'Camera Năng Lượng Mặt Trời', keywords: ['giám sát năng lượng', 'solar'] },
-  ],
-  'Đèn năng lượng mặt trời': [
-    { name: 'Đèn trong nhà', keywords: ['trong nhà'] },
-    { name: 'Đèn pha', keywords: ['pha'] },
-    { name: 'Đèn bàn chải', keywords: ['bàn chải'] },
-    { name: 'Đèn liền thể', keywords: ['liền thể'] },
-    { name: 'Linh kiện phụ kiện', keywords: ['phụ kiện'] },
-    { name: 'Quạt năng lượng', keywords: ['quạt'] },
-  ],
-};
-
-const getMatchedSubcategory = (productName: string, subcategories: { name: string; keywords: string[] }[]) => {
-  const nameLower = productName.toLowerCase();
-  for (const sub of subcategories) {
-    if (sub.keywords.some(kw => nameLower.includes(kw.toLowerCase()))) {
-      return sub.name;
-    }
-  }
-  return null;
-};
 
 export default function ProductDetail({ product, onBack, onAddToCart, onNavigate }: ProductDetailProps) {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -155,18 +102,12 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                       {isCurrentGroup && subcategoriesMap[cat] && (
                         <ul className="pl-4 py-1.5 border-l border-slate-200 ml-3 flex flex-col gap-1 mt-1">
                           {subcategoriesMap[cat].map((subcat) => {
-                            const matchedSub = getMatchedSubcategory(product.name, subcategoriesMap[cat]);
-                            const isCurrentSub = matchedSub === subcat.name;
-                            
-                            // For navigation, if it's Camera An Ninh, map it perfectly with existing subcategories
-                            let navigateView = `category-${cat}`;
-                            if (cat === 'Camera An Ninh') {
-                              const subId = subcat.keywords[1] || subcat.keywords[0]; 
-                              navigateView = `category-${cat}::${subId}`;
-                            }
+                            const matchedSubId = getMatchedSubcategory(product.name, subcategoriesMap[cat]);
+                            const isCurrentSub = matchedSubId === subcat.id;
+                            const navigateView = `category-${cat}::${subcat.id}`;
 
                             return (
-                              <li key={subcat.name}>
+                              <li key={subcat.id}>
                                 <button
                                   onClick={() => onNavigate?.(navigateView)}
                                   className={`w-full text-left py-1.5 px-3 text-xs rounded-lg transition-all truncate cursor-pointer ${
@@ -313,15 +254,46 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
             {/* Description & Reviews block */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-12 border-t border-slate-100">
               
-              {/* Product Overview/Description */}
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-5 not-italic font-sans">
-                  Mô tả sản phẩm
-                </h3>
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100/60">
-                  <p className="text-slate-600 leading-relaxed italic whitespace-pre-wrap text-sm">
-                    {product.description}
-                  </p>
+              {/* Product Overview/Description & Purchase Guide */}
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-5 not-italic font-sans">
+                    Mô tả sản phẩm
+                  </h3>
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100/60">
+                    <p className="text-slate-600 leading-relaxed italic whitespace-pre-wrap text-sm">
+                      {product.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-5 not-italic font-sans">
+                    Hướng dẫn mua hàng
+                  </h3>
+                  <div className="bg-emerald-50/40 p-6 rounded-2xl border border-emerald-100/65">
+                    <ul className="space-y-3.5 text-sm text-slate-700 mb-4">
+                      <li className="flex items-start gap-3">
+                        <span className="font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">Bước 1</span>
+                        <span className="font-medium">Chọn sản phẩm, thêm vào giỏ hàng.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">Bước 2</span>
+                        <span className="font-medium">Kiểm tra lại danh mục, số lượng sản phẩm.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">Bước 3</span>
+                        <span className="font-medium">Bấm thanh toán và điền đầy đủ thông tin số điện thoại và địa chỉ.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded text-xs shrink-0 mt-0.5">Bước 4</span>
+                        <span className="font-medium">Hoàn tất.</span>
+                      </li>
+                    </ul>
+                    <div className="pt-3 border-t border-emerald-100/90 text-xs text-slate-600 font-medium">
+                      <span className="font-bold text-red-600">Lưu ý:</span> Quý khách có thể liên hệ hotline/zalo: <a href="tel:0706583888" className="text-emerald-700 hover:text-emerald-800 font-extrabold">0706.583.888</a> để được hỗ trợ hướng dẫn mua hàng nhanh hơn.
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -12,6 +12,7 @@ import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
+import PolicyView from './components/PolicyView';
 import { Product, CartItem } from './types';
 import { ShieldCheck, Truck, Clock, Headphones, ArrowRight } from 'lucide-react';
 
@@ -126,6 +127,11 @@ export default function App() {
     else if (view === 'customers') path = '/khach-hang';
     else if (view === 'news') path = '/tin-tuc';
     else if (view === 'admin') path = '/admin';
+    else if (view === 'policy-mua-hang') path = '/chinh-sach/huong-dan-mua-hang';
+    else if (view === 'policy-bao-hanh') path = '/chinh-sach/bao-hanh';
+    else if (view === 'policy-van-chuyen') path = '/chinh-sach/van-chuyen';
+    else if (view === 'policy-doi-tra') path = '/chinh-sach/doi-tra-hoan-tien';
+    else if (view === 'policy-dai-ly') path = '/chinh-sach/dai-ly';
     else if (view.startsWith('category-')) {
       path = `/danh-muc/${encodeURIComponent(view.replace('category-', ''))}`;
     }
@@ -168,6 +174,21 @@ export default function App() {
         setSelectedProduct(null);
       } else if (path === '/admin') {
         setCurrentView('admin');
+        setSelectedProduct(null);
+      } else if (path === '/chinh-sach/huong-dan-mua-hang') {
+        setCurrentView('policy-mua-hang');
+        setSelectedProduct(null);
+      } else if (path === '/chinh-sach/bao-hanh') {
+        setCurrentView('policy-bao-hanh');
+        setSelectedProduct(null);
+      } else if (path === '/chinh-sach/van-chuyen') {
+        setCurrentView('policy-van-chuyen');
+        setSelectedProduct(null);
+      } else if (path === '/chinh-sach/doi-tra-hoan-tien') {
+        setCurrentView('policy-doi-tra');
+        setSelectedProduct(null);
+      } else if (path === '/chinh-sach/dai-ly') {
+        setCurrentView('policy-dai-ly');
         setSelectedProduct(null);
       } else if (path.startsWith('/danh-muc/')) {
         const groupRaw = decodeURIComponent(path.replace('/danh-muc/', ''));
@@ -257,6 +278,16 @@ export default function App() {
         return <Services />;
       case 'news':
         return <NewsSection />;
+      case 'policy-mua-hang':
+        return <PolicyView activeTab="mua-hang" onNavigate={handleNavigate} />;
+      case 'policy-bao-hanh':
+        return <PolicyView activeTab="bao-hanh" onNavigate={handleNavigate} />;
+      case 'policy-van-chuyen':
+        return <PolicyView activeTab="van-chuyen" onNavigate={handleNavigate} />;
+      case 'policy-doi-tra':
+        return <PolicyView activeTab="doi-tra" onNavigate={handleNavigate} />;
+      case 'policy-dai-ly':
+        return <PolicyView activeTab="dai-ly" onNavigate={handleNavigate} />;
       case 'home':
       default:
         // Handle categories as sub-views of home or separate if needed

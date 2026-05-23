@@ -1,4 +1,5 @@
 import { Facebook, Youtube, Phone, Mail, MapPin } from 'lucide-react';
+import Link from './Link';
 
 interface FooterProps {
   onAdminClick?: () => void;
@@ -64,10 +65,10 @@ export default function Footer({ onAdminClick }: FooterProps) {
               Chính sách
             </h4>
             <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-brand-primary transition-colors">Hướng dẫn mua hàng</a></li>
-              <li><a href="#" className="hover:text-brand-primary transition-colors">Chính sách bảo hành</a></li>
-              <li><a href="#" className="hover:text-brand-primary transition-colors">Chính sách vận chuyển</a></li>
-              <li><a href="#" className="hover:text-brand-primary transition-colors">Đổi trả & Hoàn tiền</a></li>
+              <li><Link to="/chinh-sach/huong-dan-mua-hang" className="hover:text-brand-primary transition-colors">Hướng dẫn mua hàng</Link></li>
+              <li><Link to="/chinh-sach/bao-hanh" className="hover:text-brand-primary transition-colors">Chính sách bảo hành</Link></li>
+              <li><Link to="/chinh-sach/van-chuyen" className="hover:text-brand-primary transition-colors">Chính sách vận chuyển</Link></li>
+              <li><Link to="/chinh-sach/doi-tra-hoan-tien" className="hover:text-brand-primary transition-colors">Đổi trả & Hoàn tiền</Link></li>
             </ul>
           </div>
 

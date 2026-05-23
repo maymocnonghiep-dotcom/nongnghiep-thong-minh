@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
 import { ChevronLeft, ChevronRight, ArrowUpNarrowWide, ArrowDownWideNarrow, Percent, Filter } from 'lucide-react';
 import { Product } from '../types';
+import { subcategoriesMap, matchesSubcategoryPattern } from '../categoriesData';
 
 interface FeaturedProductsProps {
   onProductClick: (product: Product) => void;
@@ -18,40 +19,11 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
   const [loading, setLoading] = useState(!products || products.length === 0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [cameraSubcategory, setCameraSubcategory] = useState<string>('all');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
 
-  const cameraSubcategories = [
-    { id: 'all', name: 'Tất cả' },
-    { id: 'imou', name: 'Camera IMOU' },
-    { id: 'ezviz', name: 'Camera EZVIZ' },
-    { id: 'yoosee', name: 'Camera Yoosee' },
-    { id: 'solar', name: 'Camera Năng Lượng Mặt Trời' },
-    { id: '4g', name: 'Camera 4G' }
-  ];
-
-  const matchesCameraSubcategory = (product: Product, subId: string) => {
-    if (subId === 'all') return true;
-    
-    const name = (product.name || '').toLowerCase();
-    const desc = (product.description || '').toLowerCase();
-    
-    if (subId === 'imou') {
-      return name.includes('imou') || desc.includes('imou');
-    }
-    if (subId === 'ezviz') {
-      return name.includes('ezviz') || desc.includes('ezviz');
-    }
-    if (subId === 'yoosee') {
-      return name.includes('yoosee') || desc.includes('yoosee');
-    }
-    if (subId === 'solar') {
-      return name.includes('năng lượng mặt trời') || name.includes('solar') || desc.includes('năng lượng mặt trời') || desc.includes('solar');
-    }
-    if (subId === '4g') {
-      return name.includes('4g') || desc.includes('4g');
-    }
-    return true;
-  };
+  const activeSubcategories = categoryFilter && subcategoriesMap[categoryFilter]
+    ? [{ id: 'all', name: 'Tất cả', keywords: [] }, ...subcategoriesMap[categoryFilter]]
+    : [];
 
   useEffect(() => {
     if (products && products.length > 0) {
@@ -102,9 +74,9 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
   useEffect(() => {
     setCurrentPage(1);
     if (initialSubcategory) {
-      setCameraSubcategory(initialSubcategory);
+      setSelectedSubcategory(initialSubcategory);
     } else {
-      setCameraSubcategory('all');
+      setSelectedSubcategory('all');
     }
   }, [categoryFilter, sortBy, initialSubcategory]);
 
@@ -113,8 +85,10 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
       ? allProducts.filter(p => p.group === categoryFilter)
       : allProducts;
 
-    if (categoryFilter === "Camera An Ninh") {
-      filtered = filtered.filter(p => matchesCameraSubcategory(p, cameraSubcategory));
+    if (categoryFilter && selectedSubcategory !== 'all' && subcategoriesMap[categoryFilter]) {
+      filtered = filtered.filter(p => 
+        matchesSubcategoryPattern(p.name, p.description, selectedSubcategory, subcategoriesMap[categoryFilter])
+      );
     }
 
     const sorted = [...filtered].sort((a, b) => {
@@ -201,17 +175,24 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
         </div>
       </div>
 
-      {categoryFilter === 'Camera An Ninh' && (
+      {activeSubcategories.length > 0 && (
         <div className="mb-8 p-1 bg-slate-100 rounded-2xl flex flex-wrap gap-1 md:inline-flex border border-slate-200/50">
-          {cameraSubcategories.map((sub) => (
+          {activeSubcategories.map((sub) => (
             <button
               key={sub.id}
               onClick={() => {
-                setCameraSubcategory(sub.id);
+                setSelectedSubcategory(sub.id);
                 setCurrentPage(1);
+                if (categoryFilter) {
+                  const subPart = sub.id !== 'all' ? `::${sub.id}` : '';
+                  const path = `/danh-muc/${encodeURIComponent(categoryFilter + subPart)}`;
+                  if (window.location.pathname !== path) {
+                    window.history.pushState(null, '', path);
+                  }
+                }
               }}
               className={`px-5 py-2.5 rounded-xl text-xs font-black tracking-wide uppercase transition-all whitespace-nowrap cursor-pointer ${
-                cameraSubcategory === sub.id
+                selectedSubcategory === sub.id
                   ? 'bg-white text-brand-primary shadow-sm border border-slate-200/20'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
               }`}

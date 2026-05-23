@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Product } from '../types';
 import { getHighResImageUrl } from '../utils';
 import Link from './Link';
+// @ts-ignore
+import logoImg from '../assets/images/regenerated_image_1779117468170.jpg';
 
 interface HeaderProps {
   onNavigate: (view: string) => void;
@@ -101,7 +103,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                 </>
               )}
             </div>
-            <button className="hover:text-white/80 transition-colors">Chính sách đại lý</button>
+            <Link to="/chinh-sach/dai-ly" className="hover:text-white/80 transition-colors">Chính sách đại lý</Link>
           </div>
         </div>
       </div>
@@ -116,29 +118,14 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
           />
           <button 
             onClick={() => onNavigate('home')}
-            className="flex items-center gap-2.5 hover:opacity-100 transition-all p-1.5 md:p-2 rounded-2xl group text-left active:scale-[0.98] cursor-pointer"
+            className="flex items-center hover:opacity-90 transition-all rounded-xl active:scale-[0.98] cursor-pointer"
           >
-            <div className="relative flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border border-brand-primary/10 group-hover:border-brand-primary/30 group-hover:scale-105 transition-all shadow-inner">
-              <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M50 90C55 90 85 65 85 38C85 20 68 12 50 32C32 12 15 20 15 38C15 65 45 90 50 90Z" fill="url(#logo-gradient)" />
-                <path d="M50 32C50 32 68 18 78 30C88 42 80 62 50 85C20 62 12 42 22 30C32 18 50 32 50 32Z" fill="white" opacity="0.15" />
-                <circle cx="50" cy="45" r="5" fill="#ffffff" />
-                <defs>
-                  <linearGradient id="logo-gradient" x1="15" y1="15" x2="85" y2="90" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#15803d" />
-                    <stop offset="100%" stopColor="#0369a1" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-base md:text-xl font-black text-brand-primary tracking-tight font-sans">
-                NÔNG NGHIỆP <span className="text-brand-secondary">THÔNG MINH</span>
-              </span>
-              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-extrabold text-slate-400 group-hover:text-brand-primary transition-colors mt-0.5 hidden sm:block">
-                Giải pháp tưới hiện đại • Thiết bị cao cấp
-              </span>
-            </div>
+            <img 
+              src={logoImg} 
+              alt="Nông Nghiệp Thông Minh" 
+              className="h-12 sm:h-14 md:h-16 w-auto object-contain py-0.5" 
+              referrerPolicy="no-referrer"
+            />
           </button>
         </div>
 
