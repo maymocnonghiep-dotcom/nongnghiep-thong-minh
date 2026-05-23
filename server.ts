@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import nodemailer from "nodemailer";
+import fs from "fs";
 
 async function startServer() {
   const app = express();
@@ -902,13 +903,34 @@ async function startServer() {
 
   const orders: any[] = [];
 
+  // Local JSON Database initialization on server startup
+  let activeProducts = [...products];
+  const dbPath = path.join(process.cwd(), "products_db.json");
+
+  try {
+    if (fs.existsSync(dbPath)) {
+      const dbContent = fs.readFileSync(dbPath, "utf-8");
+      const parsed = JSON.parse(dbContent);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        activeProducts = parsed;
+        console.log(`Loaded ${activeProducts.length} persistent products from products_db.json`);
+      }
+    } else {
+      // Create with initial mock products
+      fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
+      console.log(`Initialized products_db.json with ${activeProducts.length} default products.`);
+    }
+  } catch (dbError) {
+    console.error("Failed to initialize products_db.json:", dbError);
+  }
+
   // Middleware
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Routes
   app.get("/api/products", (req, res) => {
-    res.json(products);
+    res.json(activeProducts);
   });
 
   app.post("/api/admin/products/import", (req, res) => {
@@ -932,23 +954,23 @@ async function startServer() {
         }
 
         const newSkuLower = skuRaw.toLowerCase();
-        const idx = products.findIndex(p => {
+        const idx = activeProducts.findIndex(p => {
           if (!p || p.sku === undefined || p.sku === null) return false;
           return String(p.sku).trim().toLowerCase() === newSkuLower;
         });
 
         if (idx !== -1) {
           // Update product preserving reviews
-          products[idx] = {
-            ...products[idx],
+          activeProducts[idx] = {
+            ...activeProducts[idx],
             ...newProd,
             sku: skuRaw, // preserve sanitized SKU
-            reviews: products[idx].reviews || []
+            reviews: activeProducts[idx].reviews || []
           };
           updated++;
         } else {
           // Add new item
-          products.push({
+          activeProducts.push({
             ...newProd,
             sku: skuRaw,
             id: newProd.id || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
@@ -956,6 +978,14 @@ async function startServer() {
           added++;
         }
       });
+
+      // Save imported products to persistent disk file
+      try {
+        fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
+        console.log(`Saved updated list of ${activeProducts.length} products to products_db.json`);
+      } catch (writeErr) {
+        console.error("Failed to write updated products list to products_db.json:", writeErr);
+      }
 
       res.json({
         success: true,
@@ -972,7 +1002,7 @@ async function startServer() {
   });
 
   app.get("/api/categories", (req, res) => {
-    const categories = [...new Set(products.map(p => p.category))];
+    const categories = [...new Set(activeProducts.map(p => p.category))];
     res.json(categories);
   });
 
