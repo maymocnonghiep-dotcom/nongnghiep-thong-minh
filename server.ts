@@ -1147,18 +1147,53 @@ async function startServer() {
       // Persist list
       fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
 
-      // Optional: send email to store owner
+      const emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #f8fafc;">
+          <h2 style="color: #15803d; border-bottom: 2px solid #15803d; padding-bottom: 10px; margin-top: 0;">YÊU CẦU TƯ VẤN KHẢO SÁT SÂN VƯỜN</h2>
+          <p style="font-size: 14px; color: #475569;">Bà con vừa đăng ký yêu cầu tư vấn thiết kế và khảo sát trực tiếp từ trang web. Vui lòng liên hệ hỗ trợ sớm nhất!</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px;">
+            <tr style="background-color: #f1f5f9;">
+              <td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Họ tên Chú/Bác:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${fullName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Số điện thoại:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;"><a href="tel:${phone}" style="color: #15803d; font-weight: bold; text-decoration: none;">${phone}</a></td>
+            </tr>
+            <tr style="background-color: #f1f5f9;">
+              <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Tỉnh / Thành phố:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${province || "Chưa cung cấp"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Quận / Huyện:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${district || "Chưa cung cấp"}</td>
+            </tr>
+            <tr style="background-color: #f1f5f9;">
+              <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Diện tích vườn:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${area || "Chưa cung cấp"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mô hình trồng trọt:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${farmModel || "Chưa cung cấp"}</td>
+            </tr>
+          </table>
+          
+          <div style="background-color: #e2f0d9; padding: 12px; border-radius: 8px; color: #1e4620; font-size: 13px; font-weight: bold; text-align: center;">
+            Trạng thái hiện tại: Đang chờ kỹ thuật viên liên hệ tư vấn
+          </div>
+          
+          <p style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+            Yêu cầu này được gửi tự động bởi hệ thống Máy Móc Nông Nghiệp Thắng Lợi.
+          </p>
+        </div>
+      `;
+
+      console.log("------------------------------------------");
+      console.log("NEW CONSULTATION REQUEST RECEIVED - PROCESSING EMAIL...");
+
+      // Send email to store owner
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        const emailBody = `
-          <h3>Yêu cầu tư vấn thiết kế sân vườn mới</h3>
-          <p><strong>Họ tên khách hàng:</strong> ${fullName}</p>
-          <p><strong>Số điện thoại:</strong> ${phone}</p>
-          <p><strong>Tỉnh/Thành phố:</strong> ${province || "Chưa cung cấp"}</p>
-          <p><strong>Quận/Huyện:</strong> ${district || "Chưa cung cấp"}</p>
-          <p><strong>Diện tích sân vườn:</strong> ${area || "Chưa cung cấp"}</p>
-          <p><strong>Mô hình trồng trọt:</strong> ${farmModel || "Chưa cung cấp"}</p>
-          <p><i>Yêu cầu này được gửi tự động bởi hệ thống Máy Móc Nông Nghiệp Thắng Lợi. Bà con đang đợi bạn tư vấn!</i></p>
-        `;
         try {
           await transporter.sendMail({
             from: `"Yêu Cầu Tư Vấn" <${process.env.EMAIL_USER}>`,
@@ -1166,11 +1201,16 @@ async function startServer() {
             subject: `TƯ VẤN KHẢO SÁT: ${fullName} - ${phone}`,
             html: emailBody
           });
-          console.log("SUCCESS: Consultation Email sent successfully!");
+          console.log("SUCCESS: Consultation Email sent successfully to maymocnonghiep@gmail.com!");
         } catch (emailErr) {
           console.error("ERROR: Failed to send consultation email:", emailErr);
         }
+      } else {
+        console.log("WARNING: EMAIL_USER or EMAIL_PASS not set. Consultation logged to console only.");
+        console.log("Consultation Detail:", JSON.stringify(newConsultation, null, 2));
       }
+
+      console.log("------------------------------------------");
 
       res.json({ success: true, message: "Đăng ký tư vấn thành công! Nhân viên kỹ thuật sẽ sớm liên hệ Chú/Bác." });
     } catch (err) {
