@@ -17,6 +17,9 @@ export default function Link({ to, children, onClick, ...props }: LinkProps) {
     window.history.pushState(null, '', to);
     // Notify React routing listeners
     window.dispatchEvent(new Event('popstate'));
+    
+    // Smooth scroll to top of page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

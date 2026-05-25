@@ -88,6 +88,7 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
       'Dụng cụ làm vườn',
       'Camera An Ninh',
       'Đèn năng lượng mặt trời',
+      'Pin lithium & Linh kiện Pin lithium',
     ];
 
     let filtered;

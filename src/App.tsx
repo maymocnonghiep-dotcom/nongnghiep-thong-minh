@@ -118,7 +118,7 @@ export default function App() {
       window.history.pushState(null, '', newPath);
     }
     
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNavigate = (view: string, resetScroll = true) => {
@@ -147,7 +147,7 @@ export default function App() {
     setSelectedProduct(null);
     setAdminLoginError(null);
     if (resetScroll) {
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setScrollPos(0);
     }
   };

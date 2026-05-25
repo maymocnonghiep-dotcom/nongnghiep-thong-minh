@@ -11,6 +11,7 @@ export const mainCategories = [
   'Dụng cụ làm vườn',
   'Camera An Ninh',
   'Đèn năng lượng mặt trời',
+  'Pin lithium & Linh kiện Pin lithium',
   'Danh mục khác',
 ];
 
@@ -56,6 +57,12 @@ export const subcategoriesMap: Record<string, Subcategory[]> = {
     { id: 'lien-the', name: 'Đèn liền thể', keywords: ['liền thể'] },
     { id: 'phu-kien-linh-kien', name: 'Linh kiện phụ kiện', keywords: ['phụ kiện'] },
     { id: 'quat-nang-luong', name: 'Quạt năng lượng', keywords: ['quat', 'quạt'] },
+  ],
+  'Pin lithium & Linh kiện Pin lithium': [
+    { id: 'cell-pin', name: 'Cell pin Lithium', keywords: ['cell', 'lipo', 'lifepo4', '32700', '32650', '18650', '21700', '26650', 'đầu phẳng', 'đầu nhọn', 'pin lifepo4'] },
+    { id: 'mach-bms', name: 'Mạch bảo vệ BMS', keywords: ['mạch bms', 'bms', 'mạch bảo vệ', 'cân bằng', 'active balancer', 'jk', 'daly', 'mạch cân bằng'] },
+    { id: 'sac-vo-phu-kien', name: 'Sạc & Vỏ, Phụ kiện pin', keywords: ['sạc pin', 'vỏ pin', 'khung pin', 'đồng thanh', 'kẽm hàn', 'băng keo sợi thủy tinh', 'giấy phíp', 'co nhiệt'] },
+    { id: 'khoi-pin-hoan-thien', name: 'Khối pin hoàn thiện', keywords: ['khối pin', 'bình pin', 'pack pin', 'pin lithium', 'bình ắc quy lithium', 'pin 12v', 'pin 24v', 'pin 48v', 'bình pin lithium'] }
   ],
 };
 

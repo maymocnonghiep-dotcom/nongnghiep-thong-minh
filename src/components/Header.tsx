@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, User, Menu, Phone, Mail, ChevronDown, ArrowRight, Droplets, Zap, Wrench, Pipette as Pipe, Camera, Sun, Layers } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, Phone, Mail, ChevronDown, ArrowRight, Droplets, Zap, Wrench, Pipette as Pipe, Camera, Sun, Layers, Battery } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { Product } from '../types';
@@ -46,6 +46,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
     { name: 'Dụng cụ làm vườn', icon: Wrench },
     { name: 'Camera An Ninh', icon: Camera },
     { name: 'Đèn năng lượng mặt trời', icon: Sun },
+    { name: 'Pin lithium & Linh kiện Pin lithium', icon: Battery },
     { name: 'Danh mục khác', icon: Layers }
   ];
 
@@ -58,6 +59,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
         'Dụng cụ làm vườn',
         'Camera An Ninh',
         'Đèn năng lượng mặt trời',
+        'Pin lithium & Linh kiện Pin lithium',
       ];
       return products.filter(p => {
         const notInMain = !p.group || p.group === 'Danh mục khác' || !definedGroups.includes(p.group);

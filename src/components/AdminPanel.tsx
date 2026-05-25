@@ -31,6 +31,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     "Vật tư nước",
     "Dụng cụ làm vườn",
     "Đèn năng lượng mặt trời",
+    "Pin lithium & Linh kiện Pin lithium",
     "Danh mục khác"
   ];
   const [categories, setCategories] = useState<string[]>(defaultCategoriesList);
