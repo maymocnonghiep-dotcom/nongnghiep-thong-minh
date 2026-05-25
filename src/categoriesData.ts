@@ -11,6 +11,7 @@ export const mainCategories = [
   'Dụng cụ làm vườn',
   'Camera An Ninh',
   'Đèn năng lượng mặt trời',
+  'Danh mục khác',
 ];
 
 export const subcategoriesMap: Record<string, Subcategory[]> = {

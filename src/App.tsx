@@ -483,7 +483,7 @@ export default function App() {
                      </div>
                      <div className="h-px bg-white/20" />
                      <div className="text-sm text-center">
-                        Công ty TNHH Giải Pháp <br /> Nông Nghiệp Thông Minh
+                        Công ty TNHH Giải Pháp <br /> Nông Cụ Thông Minh
                      </div>
                    </div>
                 </div>

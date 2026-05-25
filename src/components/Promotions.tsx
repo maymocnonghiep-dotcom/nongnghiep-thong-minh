@@ -31,7 +31,7 @@ export default function Promotions() {
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-brand-primary mb-4 not-italic font-sans">Chương Trình Khuyến Mãi</h1>
-          <p className="text-slate-500 max-w-2xl mx-auto italic">Cập nhật những ưu đãi hấp dẫn nhất trong tháng dành cho khách hàng của Nông Nghiệp Thông Minh.</p>
+          <p className="text-slate-500 max-w-2xl mx-auto italic">Cập nhật những ưu đãi hấp dẫn nhất trong tháng dành cho khách hàng của Nông Cụ Thông Minh.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

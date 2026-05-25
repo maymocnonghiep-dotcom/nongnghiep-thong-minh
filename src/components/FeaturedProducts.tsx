@@ -81,9 +81,28 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
   }, [categoryFilter, sortBy, initialSubcategory]);
 
   const getFilteredAndSortedProducts = () => {
-    let filtered = categoryFilter 
-      ? allProducts.filter(p => p.group === categoryFilter)
-      : allProducts;
+    const definedGroups = [
+      'Thiết bị tưới',
+      'Đồ điện',
+      'Vật tư nước',
+      'Dụng cụ làm vườn',
+      'Camera An Ninh',
+      'Đèn năng lượng mặt trời',
+    ];
+
+    let filtered;
+    if (categoryFilter === 'Danh mục khác') {
+      filtered = allProducts.filter(p => {
+        // Doesn't belong to other main categories, or doesn't have a level 2 group (subcategoryId)
+        const notInMain = !p.group || p.group === 'Danh mục khác' || !definedGroups.includes(p.group);
+        const noSubcategory = !p.subcategoryId || p.subcategoryId.trim() === '';
+        return notInMain || noSubcategory;
+      });
+    } else if (categoryFilter) {
+      filtered = allProducts.filter(p => p.group === categoryFilter);
+    } else {
+      filtered = allProducts;
+    }
 
     if (categoryFilter && selectedSubcategory !== 'all' && subcategoriesMap[categoryFilter]) {
       filtered = filtered.filter(p => 
@@ -132,7 +151,7 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
           <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-1 tracking-tight">
             {categoryFilter ? `Nhóm: ${categoryFilter}` : 'Mặt hàng nổi bật'}
           </h2>
-          <p className="text-slate-500 text-sm font-medium">Khám phá giải pháp nông nghiệp thông minh</p>
+          <p className="text-slate-500 text-sm font-medium">Khám phá giải pháp nông cụ thông minh</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

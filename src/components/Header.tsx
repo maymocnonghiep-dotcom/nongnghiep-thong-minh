@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, User, Menu, Phone, Mail, ChevronDown, ArrowRight, Droplets, Zap, Wrench, Pipette as Pipe, Camera, Sun } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, Phone, Mail, ChevronDown, ArrowRight, Droplets, Zap, Wrench, Pipette as Pipe, Camera, Sun, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { Product } from '../types';
@@ -45,10 +45,26 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
     { name: 'Vật tư nước', icon: Pipe },
     { name: 'Dụng cụ làm vườn', icon: Wrench },
     { name: 'Camera An Ninh', icon: Camera },
-    { name: 'Đèn năng lượng mặt trời', icon: Sun }
+    { name: 'Đèn năng lượng mặt trời', icon: Sun },
+    { name: 'Danh mục khác', icon: Layers }
   ];
 
   const getProductsByActiveCategory = () => {
+    if (activeCategory === 'Danh mục khác') {
+      const definedGroups = [
+        'Thiết bị tưới',
+        'Đồ điện',
+        'Vật tư nước',
+        'Dụng cụ làm vườn',
+        'Camera An Ninh',
+        'Đèn năng lượng mặt trời',
+      ];
+      return products.filter(p => {
+        const notInMain = !p.group || p.group === 'Danh mục khác' || !definedGroups.includes(p.group);
+        const noSubcategory = !p.subcategoryId || p.subcategoryId.trim() === '';
+        return notInMain || noSubcategory;
+      }).slice(0, 10);
+    }
     return products.filter(p => p.group === activeCategory).slice(0, 10);
   };
 
@@ -135,10 +151,10 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-base md:text-xl font-black text-brand-primary tracking-tight font-sans">
-                NÔNG NGHIỆP <span className="text-brand-secondary">THÔNG MINH</span>
+                NÔNG CỤ <span className="text-brand-secondary">THÔNG MINH</span>
               </span>
               <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-extrabold text-slate-400 group-hover:text-brand-primary transition-colors mt-0.5 hidden sm:block">
-                Giải pháp tưới hiện đại • Thiết bị cao cấp
+                NHẸ HƠN - THÔNG MINH HƠN - HIỆU QUẢ HƠN
               </span>
             </div>
           </button>

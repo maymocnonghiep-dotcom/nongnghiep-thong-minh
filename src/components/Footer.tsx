@@ -14,10 +14,10 @@ export default function Footer({ onAdminClick }: FooterProps) {
           <div className="space-y-6">
             <div className="flex flex-col leading-tight">
               <span className="text-2xl font-bold text-white tracking-tighter">
-                Nông Nghiệp <span className="text-brand-primary">Thông Minh</span>
+                Nông Cụ <span className="text-brand-primary">Thông Minh</span>
               </span>
               <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-500">
-                Giải pháp tưới hiện đại
+                NHẸ HƠN - THÔNG MINH HƠN - HIỆU QUẢ HƠN
               </span>
             </div>
             <p className="text-sm leading-relaxed">
@@ -100,7 +100,7 @@ export default function Footer({ onAdminClick }: FooterProps) {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-          <span>© 2024 Nóng Nghiệp Thông Minh. Tất cả quyền được bảo lưu.</span>
+          <span>© 2024 Nông Cụ Thông Minh. Tất cả quyền được bảo lưu.</span>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white">Điều khoản</a>
             <a href="#" className="hover:text-white">Bảo mật</a>

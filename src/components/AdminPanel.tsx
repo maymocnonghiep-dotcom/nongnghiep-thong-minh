@@ -30,7 +30,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     "Camera An Ninh",
     "Vật tư nước",
     "Dụng cụ làm vườn",
-    "Đèn năng lượng mặt trời"
+    "Đèn năng lượng mặt trời",
+    "Danh mục khác"
   ];
   const [categories, setCategories] = useState<string[]>(defaultCategoriesList);
   const [newSku, setNewSku] = useState('');
