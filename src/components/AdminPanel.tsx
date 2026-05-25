@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin, PlusCircle, Trash2, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
@@ -11,7 +11,7 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: AdminPanelProps) {
-  const [activeTab, setActiveTab ] = useState<'import' | 'orders' | 'consultations'>('orders');
+  const [activeTab, setActiveTab ] = useState<'import' | 'orders' | 'consultations' | 'add_product'>('orders');
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string; count?: number } | null>(null);
   
@@ -22,11 +22,37 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [consultations, setConsultations] = useState<any[]>([]);
   const [loadingConsultations, setLoadingConsultations] = useState(false);
 
+  // States for single product creation form
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newSku, setNewSku] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newGroup, setNewGroup] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isNewCategory, setIsNewCategory] = useState(false);
+  const [newPrice, setNewPrice] = useState('');
+  const [newOriginalPrice, setNewOriginalPrice] = useState('');
+  const [newUnit, setNewUnit] = useState('Bộ');
+  const [newImage, setNewImage] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newSpecs, setNewSpecs] = useState<{ key: string; value: string }[]>([
+    { key: 'Thương hiệu', value: 'Thắng Lợi' },
+    { key: 'Chất liệu', value: 'Nhựa cao cấp' }
+  ]);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [productSuccessMessage, setProductSuccessMessage] = useState<string | null>(null);
+  const [productErrorMessage, setProductErrorMessage] = useState<string | null>(null);
+  const [newImagesList, setNewImagesList] = useState<string[]>([]);
+  const [imageInputVal, setImageInputVal] = useState('');
+  const [isCategoryHovered, setIsCategoryHovered] = useState(false);
+
   useEffect(() => {
     if (activeTab === 'orders') {
       fetchOrders();
     } else if (activeTab === 'consultations') {
       fetchConsultations();
+    } else if (activeTab === 'add_product') {
+      fetchCategories();
     }
   }, [activeTab]);
 
@@ -42,6 +68,162 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         console.error('Error fetching consultations:', err);
         setLoadingConsultations(false);
       });
+  };
+
+  const fetchCategories = () => {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCategories(data);
+          if (data.length > 0 && !selectedCategory) {
+            setSelectedCategory(data[0]);
+          }
+        }
+      })
+      .catch(err => console.error('Error fetching categories:', err));
+  };
+
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setNewImage(reader.result);
+        setNewImagesList(prev => [...prev, reader.result as string]);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProductImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setNewImagesList(prev => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handlePushImageUrl = () => {
+    if (imageInputVal.trim()) {
+      setNewImagesList(prev => [...prev, imageInputVal.trim()]);
+      setImageInputVal('');
+    }
+  };
+
+  const handleAddSpecRow = () => {
+    setNewSpecs([...newSpecs, { key: '', value: '' }]);
+  };
+
+  const handleUpdateSpecRow = (index: number, key: 'key' | 'value', text: string) => {
+    const updated = [...newSpecs];
+    updated[index][key] = text;
+    setNewSpecs(updated);
+  };
+
+  const handleRemoveSpecRow = (index: number) => {
+    setNewSpecs(newSpecs.filter((_, i) => i !== index));
+  };
+
+  const handleAddProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProductSuccessMessage(null);
+    setProductErrorMessage(null);
+
+    if (!newSku.trim()) {
+      setProductErrorMessage('Mã sản phẩm (SKU) không được để trống!');
+      return;
+    }
+    if (!newName.trim()) {
+      setProductErrorMessage('Tên sản phẩm không được để trống!');
+      return;
+    }
+
+    const finalCategory = selectedCategory;
+    if (!finalCategory || !finalCategory.trim()) {
+      setProductErrorMessage('Vui lòng chọn hoặc điền thông tin nhóm hàng (Danh mục)!');
+      return;
+    }
+
+    setIsAddingProduct(true);
+
+    const specsObject: Record<string, string> = {};
+    newSpecs.forEach(spec => {
+      if (spec.key.trim() && spec.value.trim()) {
+        specsObject[spec.key.trim()] = spec.value.trim();
+      }
+    });
+
+    // Extract first image from list as main image, or default to fallback or main newImage state
+    const cleanImages = newImagesList.filter(u => u.trim() !== '');
+    const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
+    const primaryImage = cleanImages.length > 0 ? cleanImages[0] : (newImage.trim() || fallbackImage);
+    const finalImagesToSend = cleanImages.length > 0 ? cleanImages : [primaryImage];
+
+    const bodyData = {
+      sku: newSku.trim(),
+      name: newName.trim(),
+      category: finalCategory.trim(),
+      group: newGroup.trim(),
+      price: parseFloat(newPrice) || 0,
+      originalPrice: newOriginalPrice ? parseFloat(newOriginalPrice) : undefined,
+      description: newDescription.trim(),
+      image: primaryImage,
+      images: finalImagesToSend,
+      unit: newUnit.trim(),
+      specs: specsObject
+    };
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bodyData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProductSuccessMessage(data.message || 'Thêm sản phẩm thành công!');
+        onRefreshProducts?.();
+        
+        // Reset states
+        setNewSku('');
+        setNewName('');
+        setNewGroup('');
+        setNewPrice('');
+        setNewOriginalPrice('');
+        setNewDescription('');
+        setNewImage('');
+        setNewImagesList([]);
+        setImageInputVal('');
+        setNewSpecs([
+          { key: 'Thương hiệu', value: 'Thắng Lợi' },
+          { key: 'Chất liệu', value: 'Nhựa cao cấp' }
+        ]);
+
+        fetchCategories();
+      } else {
+        setProductErrorMessage(data.message || 'Có lỗi xảy ra khi lưu sản phẩm.');
+      }
+    } catch (err) {
+      console.error(err);
+      setProductErrorMessage('Lỗi mạng, kiểm tra lại kết nối!');
+    } finally {
+      setIsAddingProduct(false);
+    }
   };
 
   const handleUpdateConsultationStatus = (id: string, newStatus: string) => {
@@ -358,7 +540,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
               </button>
               <button 
                 onClick={() => setActiveTab('consultations')}
-                className={`px-6 py-3 font-bold text-sm transition-all relative ${
+                className={`px-6 py-3 font-bold text-sm transition-all relative shrink-0 ${
                   activeTab === 'consultations' ? 'text-brand-primary' : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
@@ -366,6 +548,21 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   <Database size={18} /> Yêu cầu tư vấn ({consultations.length})
                 </span>
                 {activeTab === 'consultations' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />}
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab('add_product');
+                  setProductSuccessMessage(null);
+                  setProductErrorMessage(null);
+                }}
+                className={`px-6 py-3 font-bold text-sm transition-all relative shrink-0 ${
+                  activeTab === 'add_product' ? 'text-brand-primary' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <PlusCircle size={18} /> Thêm sản phẩm
+                </span>
+                {activeTab === 'add_product' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />}
               </button>
             </div>
 
@@ -504,6 +701,404 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                     </table>
                   </div>
                 )}
+              </div>
+            ) : activeTab === 'add_product' ? (
+              <div className="space-y-8 text-sm text-slate-700">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 not-italic font-sans">
+                    <PlusCircle size={24} className="text-brand-primary" /> Thêm sản phẩm thủ công mới
+                  </h2>
+                </div>
+
+                {productSuccessMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-5 bg-green-50 text-green-800 rounded-2xl border border-green-150 flex items-start gap-3"
+                  >
+                    <CheckCircle2 size={22} className="text-green-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-extrabold text-green-900 mb-1">Thêm sản phẩm thành công!</h4>
+                      <p className="text-xs text-green-700 opacity-90">{productSuccessMessage}</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {productErrorMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-5 bg-rose-50 text-rose-800 rounded-2xl border border-rose-150 flex items-start gap-3"
+                  >
+                    <AlertCircle size={22} className="text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-extrabold text-rose-900 mb-1">Cảnh báo lỗi!</h4>
+                      <p className="text-xs text-rose-700 opacity-90">{productErrorMessage}</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                <form onSubmit={handleAddProductSubmit} className="space-y-6">
+                  {/* Row 1: SKU & Name */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                        Mã sản phẩm (SKU) <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={newSku}
+                        onChange={(e) => setNewSku(e.target.value)}
+                        placeholder="Ví dụ: BE-BU-50L, BOMB-3HP"
+                        className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
+                      />
+                      <span className="text-[10px] text-slate-400 block italic font-bold">Lưu ý: Nếu nhập SKU đã tồn tại, hệ thống sẽ tự động cập nhật đè thông tin lên sản phẩm đó.</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                        Tên sản phẩm <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder="Ví dụ: Béc phun sương bù áp Super Spurt"
+                        className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Category selection & Custom input */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/40 p-5 rounded-2xl border border-slate-100">
+                    <div 
+                      className="space-y-1.5 relative"
+                      onMouseEnter={() => setIsCategoryHovered(true)}
+                      onMouseLeave={() => setIsCategoryHovered(false)}
+                    >
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                        Chọn nhóm mặt hàng <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type="text"
+                          required
+                          value={selectedCategory}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          onFocus={() => setIsCategoryHovered(true)}
+                          placeholder="Nhập hoặc để trỏ chuột xem các nhóm..."
+                          className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all cursor-pointer text-sm"
+                        />
+                        <div className="absolute right-4 top-3.5 text-slate-400 pointer-events-none">
+                          <Plus size={16} />
+                        </div>
+                      </div>
+
+                      {/* Hover Dropdown of groups */}
+                      <AnimatePresence>
+                        {isCategoryHovered && categories.length > 0 && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="absolute left-0 right-0 top-full z-50 bg-white border border-slate-200 rounded-2xl shadow-xl mt-1.5 max-h-60 overflow-y-auto p-2"
+                          >
+                            <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
+                              Danh sách nhóm có sẵn (Bấm để chọn nhanh)
+                            </div>
+                            {categories
+                              .filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase()))
+                              .map((cat, idx) => (
+                                <button
+                                  type="button"
+                                  key={idx}
+                                  onClick={() => {
+                                    setSelectedCategory(cat);
+                                    setIsCategoryHovered(false);
+                                  }}
+                                  className="w-full text-left font-bold text-xs text-slate-700 hover:text-white hover:bg-brand-primary px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-between"
+                                >
+                                  <span>{cat}</span>
+                                  <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-brand-secondary">Sẵn có</span>
+                                </button>
+                              ))}
+                            
+                            {categories.filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase())).length === 0 && (
+                              <div className="p-3 text-xs text-slate-400 italic font-medium">
+                                Chưa có nhóm trùng khớp. Tiếp tục gõ để tự thêm mới nhóm hàng này!
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-500 block uppercase tracking-wider">
+                        Phân loại chi tiết (Không bắt buộc)
+                      </label>
+                      <input 
+                        type="text" 
+                        value={newGroup}
+                        onChange={(e) => setNewGroup(e.target.value)}
+                        placeholder="Ví dụ: Béc tưới, Phụ kiện nối..."
+                        className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary rounded-xl px-4 py-3 font-medium transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Pricing and Unit */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                        Giá bán (VNĐ) <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          required 
+                          value={newPrice}
+                          onChange={(e) => setNewPrice(e.target.value)}
+                          placeholder="Ví dụ: 150000"
+                          className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-bold transition-all"
+                        />
+                        <span className="absolute right-4 top-3 text-slate-400 font-bold text-xs">₫</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-500 block uppercase tracking-wider">
+                        Giá gốc (Để hiển thị giảm giá)
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          value={newOriginalPrice}
+                          onChange={(e) => setNewOriginalPrice(e.target.value)}
+                          placeholder="Ví dụ: 180000"
+                          className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
+                        />
+                        <span className="absolute right-4 top-3 text-slate-400 font-bold text-xs">₫</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                        Đơn vị tính <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={newUnit}
+                        onChange={(e) => setNewUnit(e.target.value)}
+                        placeholder="Bộ, Cái, Mét, Cuộn..."
+                        className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Image Code */}
+                  <div className="bg-slate-50/40 p-5 rounded-2xl border border-slate-100 space-y-4">
+                    <label className="text-xs font-black text-slate-700 block uppercase tracking-wider mb-2">
+                      Hình ảnh sản phẩm (Có thể thêm nhiều ảnh)
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <span className="text-xs text-slate-500 font-bold">Cách 1: Nhập liên kết (URL) ảnh</span>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              value={imageInputVal}
+                              onChange={(e) => setImageInputVal(e.target.value)}
+                              placeholder="Dán liên kết hình ảnh..."
+                              className="flex-1 text-slate-850 bg-white border border-slate-200 focus:border-brand-primary rounded-xl px-4 py-2.5 text-xs font-medium transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={handlePushImageUrl}
+                              className="bg-brand-primary hover:bg-brand-secondary text-white text-xs px-4 py-2 rounded-xl font-extrabold transition-all shrink-0 cursor-pointer"
+                            >
+                              Thêm
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-1.55">
+                          <span className="text-xs text-slate-500 font-bold">Cách 2: Tải lên từ máy tính của Chú/Bác (Chọn nhiều ảnh được)</span>
+                          <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 hover:border-brand-primary bg-white hover:bg-slate-50 rounded-xl py-3 px-4 cursor-pointer transition-all">
+                            <Upload size={16} className="text-slate-400" />
+                            <span className="text-xs text-slate-600 font-bold">Chọn các ảnh thiết bị...</span>
+                            <input 
+                              type="file" 
+                              multiple
+                              accept="image/*" 
+                              onChange={handleProductImagesUpload} 
+                              className="hidden" 
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="bg-white border border-slate-150 rounded-2xl p-4 min-h-40 flex flex-col justify-start">
+                        <span className="text-[11px] font-extrabold text-slate-400 mb-2 block uppercase tracking-wider">
+                          Danh sách ảnh ({newImagesList.length} ảnh):
+                        </span>
+                        
+                        {newImagesList.length === 0 ? (
+                          <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 py-6">
+                            <Plus size={28} className="text-slate-300" />
+                            <span className="text-xs font-bold block mt-1">Chưa có ảnh nào</span>
+                            <span className="text-[10px] text-slate-400 block max-w-[180px] leading-relaxed">Kéo/chọn ảnh từ máy hoặc dán liên kết để xem</span>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2 max-h-44 overflow-y-auto">
+                            {newImagesList.map((img, idx) => (
+                              <div key={idx} className="aspect-square relative group rounded-lg border border-slate-200 overflow-hidden bg-slate-50/50 flex items-center justify-center">
+                                <img 
+                                  src={img} 
+                                  alt={`Product image ${idx + 1}`} 
+                                  referrerPolicy="no-referrer"
+                                  title="Bấm để xếp làm ảnh đại diện chính"
+                                  onClick={() => {
+                                    // Make primary
+                                    const updated = [...newImagesList];
+                                    const selectItem = updated.splice(idx, 1)[0];
+                                    updated.unshift(selectItem);
+                                    setNewImagesList(updated);
+                                  }}
+                                  className="max-h-full max-w-full object-contain cursor-pointer"
+                                />
+
+                                {idx === 0 ? (
+                                  <span className="absolute bottom-1 left-1 bg-brand-primary text-[8px] text-white font-extrabold px-1.5 py-0.5 rounded shadow-sm">
+                                    Ảnh chính 🌟
+                                  </span>
+                                ) : (
+                                  <span className="absolute bottom-1 left-1 bg-slate-800/80 text-[8px] text-white font-extrabold px-1 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Xếp #{(idx)}
+                                  </span>
+                                )}
+
+                                <button 
+                                  type="button" 
+                                  onClick={() => {
+                                    setNewImagesList(newImagesList.filter((_, i) => i !== idx));
+                                  }}
+                                  className="absolute top-1 right-1 bg-rose-100 hover:bg-rose-200 text-rose-600 p-1 rounded-full transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                                  title="Xóa ảnh"
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 5: Description */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                      Mô tả sản phẩm
+                    </label>
+                    <textarea 
+                      rows={4}
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                      placeholder="Nhập mô tả chi tiết của sản phẩm. Ví dụ: Được dùng chuyên biệt lắp đặt hệ thống bù áp cho hộ gia đình tại miền tây..."
+                      className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
+                    />
+                  </div>
+
+                  {/* Row 6: Technical Specifications */}
+                  <div className="space-y-4 bg-slate-50/40 p-5 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                          Thông số kỹ thuật sản phẩm
+                        </label>
+                        <span className="text-[10px] text-slate-400 block font-semibold">Cung cấp cặp thuộc tính kỹ thuật để bà con dễ theo dõi</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={handleAddSpecRow}
+                        className="flex items-center gap-1 text-xs bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer animate-none"
+                      >
+                        <Plus size={14} /> Thêm thông số
+                      </button>
+                    </div>
+
+                    {newSpecs.length === 0 ? (
+                      <div className="text-center py-6 text-xs text-slate-400 font-bold bg-white rounded-xl border border-slate-150 border-dashed">
+                        Chưa có thông số kỹ thuật nào. Bấm nút phía trên để bắt đầu thêm.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {newSpecs.map((spec, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <input 
+                              type="text" 
+                              required
+                              value={spec.key}
+                              onChange={(e) => handleUpdateSpecRow(index, 'key', e.target.value)}
+                              placeholder="Tên thông số (Ví dụ: Lưu lượng, Áp lực)"
+                              className="flex-1 text-slate-800 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold"
+                            />
+                            <input 
+                              type="text" 
+                              required
+                              value={spec.value}
+                              onChange={(e) => handleUpdateSpecRow(index, 'value', e.target.value)}
+                              placeholder="Giá trị (Ví dụ: 30 lít/giờ, 1.5 bar)"
+                              className="flex-1 text-slate-800 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => handleRemoveSpecRow(index)}
+                              className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition-all cursor-pointer"
+                              title="Xóa dòng này"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3 font-sans">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('orders');
+                        setProductSuccessMessage(null);
+                        setProductErrorMessage(null);
+                      }}
+                      className="px-6 py-3 border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-xl font-bold transition-all text-xs cursor-pointer"
+                    >
+                      Hủy & Thôi
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={isAddingProduct}
+                      className="px-8 py-3 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-brand-primary/20 disabled:opacity-75 disabled:cursor-not-allowed"
+                    >
+                      {isAddingProduct ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent inline-block" /> Đang lưu sản phẩm...
+                        </>
+                      ) : (
+                        <>
+                          Lưu & Đăng bán <CheckCircle2 size={14} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
             ) : (
               <div>

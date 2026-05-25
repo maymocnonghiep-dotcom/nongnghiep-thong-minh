@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { Star, ShoppingCart, ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -24,6 +24,11 @@ const mainCategories = [
 export default function ProductDetail({ product, onBack, onAddToCart, onNavigate }: ProductDetailProps) {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isZooming, setIsZooming] = useState(false);
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveImgIndex(0);
+  }, [product.id]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -135,34 +140,69 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
               
-              {/* Product Image Stage */}
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50 relative group cursor-zoom-in self-start"
-                onMouseMove={handleMouseMove}
-                onMouseEnter={() => setIsZooming(true)}
-                onMouseLeave={() => setIsZooming(false)}
-              >
-                <img 
-                  src={getHighResImageUrl(product.image)} 
-                  className="w-full h-full object-cover" 
-                  style={{
-                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                    transform: isZooming ? 'scale(2.2)' : 'scale(1)',
-                    transition: isZooming ? 'none' : 'transform 0.2s ease-out, transform-origin 0.2s ease-out',
-                  }}
-                  alt={product.name} 
-                />
-                
-                {/* Visual Indicator Hover Overlay */}
-                {!isZooming && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/85 backdrop-blur-md text-white text-xs py-2 px-4 rounded-full flex items-center gap-2 shadow-lg transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:scale-105 pointer-events-none whitespace-nowrap">
-                    <span className="text-sm">🔍</span>
-                    <span className="font-medium tracking-wide">Rê chuột vào ảnh để phóng to chi tiết</span>
-                  </div>
-                )}
-              </motion.div>
+              {/* Product Image Stage & Gallery Selector */}
+              <div className="flex flex-col gap-4 self-start w-full">
+                {(() => {
+                  const imageList = product.images && product.images.length > 0 ? product.images : [product.image];
+                  const selectedImgSrc = imageList[activeImgIndex] || product.image;
+                  return (
+                    <>
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="aspect-square rounded-3xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50/50 relative group cursor-zoom-in self-start w-full"
+                        onMouseMove={handleMouseMove}
+                        onMouseEnter={() => setIsZooming(true)}
+                        onMouseLeave={() => setIsZooming(false)}
+                      >
+                        <img 
+                          src={getHighResImageUrl(selectedImgSrc)} 
+                          className="w-full h-full object-cover" 
+                          style={{
+                            transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                            transform: isZooming ? 'scale(2.2)' : 'scale(1)',
+                            transition: isZooming ? 'none' : 'transform 0.2s ease-out, transform-origin 0.2s ease-out',
+                          }}
+                          alt={product.name} 
+                        />
+                        
+                        {/* Visual Indicator Hover Overlay */}
+                        {!isZooming && (
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/85 backdrop-blur-md text-white text-xs py-2 px-4 rounded-full flex items-center gap-2 shadow-lg transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:scale-105 pointer-events-none whitespace-nowrap">
+                            <span className="text-sm">🔍</span>
+                            <span className="font-medium tracking-wide">Rê chuột vào ảnh để phóng to chi tiết</span>
+                          </div>
+                        )}
+                      </motion.div>
+
+                      {/* Grid of thumbnails to select */}
+                      {imageList.length > 1 && (
+                        <div className="flex items-center gap-2.5 overflow-x-auto py-1.5 scrollbar-thin">
+                          {imageList.map((img, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActiveImgIndex(idx)}
+                              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 bg-slate-50 transition-all cursor-pointer shrink-0 relative ${
+                                activeImgIndex === idx 
+                                  ? 'border-brand-primary shadow-sm scale-105' 
+                                  : 'border-slate-200/80 hover:border-slate-400'
+                              }`}
+                            >
+                              <img 
+                                src={img} 
+                                alt={`${product.name} thumbnail ${idx + 1}`} 
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
 
               {/* Product Meta Info & CTA */}
               <motion.div 

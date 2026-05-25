@@ -15,6 +15,7 @@ export interface Product {
   originalPrice?: number;
   discount?: number;
   image: string;
+  images?: string[];
   description: string;
   unit?: string;
   specs: { [key: string]: string };

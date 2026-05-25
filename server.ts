@@ -1023,6 +1023,78 @@ async function startServer() {
     }
   });
 
+  app.post("/api/admin/products", (req, res) => {
+    try {
+      const { sku, name, category, group, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
+      
+      if (!sku || !sku.trim()) {
+        return res.status(400).json({ success: false, message: "Mã SKU không được trống!" });
+      }
+      if (!name || !name.trim()) {
+        return res.status(400).json({ success: false, message: "Tên sản phẩm không được trống!" });
+      }
+      if (!category || !category.trim()) {
+        return res.status(400).json({ success: false, message: "Nhóm hàng (Danh mục) không được trống!" });
+      }
+
+      const cleanSku = String(sku).trim();
+      const cleanSkuLower = cleanSku.toLowerCase();
+
+      const idx = activeProducts.findIndex(p => {
+        if (!p || p.sku === undefined || p.sku === null) return false;
+        return String(p.sku).trim().toLowerCase() === cleanSkuLower;
+      });
+
+      const parsedPrice = parseFloat(price) || 0;
+      const parsedOriginalPrice = originalPrice ? parseFloat(originalPrice) : undefined;
+      const parsedDiscount = discount ? parseFloat(discount) : undefined;
+
+      const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
+      const finalImage = image || (images && images.length > 0 ? images[0] : fallbackImage);
+      const finalImages = Array.isArray(images) && images.length > 0 ? images : [finalImage];
+
+      const newProduct = {
+        id: idx !== -1 ? activeProducts[idx].id : `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        sku: cleanSku,
+        name: name.trim(),
+        category: category.trim(),
+        group: group ? group.trim() : "",
+        price: parsedPrice,
+        originalPrice: parsedOriginalPrice,
+        discount: parsedDiscount,
+        image: finalImage,
+        images: finalImages,
+        description: description || "",
+        unit: unit ? unit.trim() : "Bộ",
+        specs: specs || {},
+        reviews: idx !== -1 ? (activeProducts[idx].reviews || []) : []
+      };
+
+      if (idx !== -1) {
+        activeProducts[idx] = newProduct;
+      } else {
+        activeProducts.push(newProduct);
+      }
+
+      // Save to server DB file
+      try {
+        fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
+        console.log(`Successfully persisted single product SKU ${cleanSku}. Total: ${activeProducts.length}`);
+      } catch (writeErr) {
+        console.error("Failed to write single product to products_db.json:", writeErr);
+      }
+
+      res.json({
+        success: true,
+        message: idx !== -1 ? "Cập nhật sản phẩm thành công!" : "Thêm mới sản phẩm thành công!",
+        product: newProduct
+      });
+    } catch (error: any) {
+      console.error("Error creating single product:", error);
+      res.status(500).json({ success: false, message: `Lỗi hệ thống: ${error.message || "Không rõ nguyên nhân"}` });
+    }
+  });
+
   app.get("/api/categories", (req, res) => {
     const categories = [...new Set(activeProducts.map(p => p.category))];
     res.json(categories);
