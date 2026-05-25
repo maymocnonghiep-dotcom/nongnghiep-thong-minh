@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Gardening and irrigation irrigation system product details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sku": { "type": "string" },
+        "manufacturerCode": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "group": { "type": "string" },
+        "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "discount": { "type": "number" },
+        "image": { "type": "string" },
+        "images": { "type": "array" },
+        "description": { "type": "string" },
+        "unit": { "type": "string" },
+        "specs": { "type": "object" },
+        "reviews": { "type": "array" }
+      },
+      "required": ["sku", "name", "category"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customer": { "type": "object" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["customer", "items", "total"]
+    },
+    "Consultation": {
+      "title": "Consultation",
+      "description": "Request for garden layout and construction consultation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "gardenArea": { "type": "string" },
+        "gardenModel": { "type": "string" },
+        "requestDetail": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "phone"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Product master table"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer sales orders"
+    },
+    "/consultations/{consultationId}": {
+      "schema": "Consultation",
+      "description": "Design consultation requests"
+    }
+  }
+}

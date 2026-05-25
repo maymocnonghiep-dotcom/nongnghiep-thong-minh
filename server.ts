@@ -2,6 +2,9 @@ import express from "express";
 import path from "path";
 import nodemailer from "nodemailer";
 import fs from "fs";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+
 
 async function startServer() {
   const app = express();
@@ -904,47 +907,180 @@ async function startServer() {
   let orders: any[] = [];
   let consultations: any[] = [];
 
+  const dbPath = path.join(process.cwd(), "products_db.json");
   const ordersDbPath = path.join(process.cwd(), "orders_db.json");
   const consultationsDbPath = path.join(process.cwd(), "consultations_db.json");
 
+  // Load local backups first (instant ready states in memory)
   try {
     if (fs.existsSync(ordersDbPath)) {
-      const content = fs.readFileSync(ordersDbPath, "utf-8");
-      orders = JSON.parse(content);
+      orders = JSON.parse(fs.readFileSync(ordersDbPath, "utf-8"));
     }
   } catch (err) {
-    console.error("Failed to load orders:", err);
+    console.error("Failed to load local orders backup:", err);
   }
 
   try {
     if (fs.existsSync(consultationsDbPath)) {
-      const content = fs.readFileSync(consultationsDbPath, "utf-8");
-      consultations = JSON.parse(content);
+      consultations = JSON.parse(fs.readFileSync(consultationsDbPath, "utf-8"));
     }
   } catch (err) {
-    console.error("Failed to load consultations:", err);
+    console.error("Failed to load local consultations backup:", err);
   }
 
-  // Local JSON Database initialization on server startup
   let activeProducts = [...products];
-  const dbPath = path.join(process.cwd(), "products_db.json");
-
   try {
     if (fs.existsSync(dbPath)) {
       const dbContent = fs.readFileSync(dbPath, "utf-8");
       const parsed = JSON.parse(dbContent);
       if (Array.isArray(parsed) && parsed.length > 0) {
         activeProducts = parsed;
-        console.log(`Loaded ${activeProducts.length} persistent products from products_db.json`);
       }
-    } else {
-      // Create with initial mock products
-      fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
-      console.log(`Initialized products_db.json with ${activeProducts.length} default products.`);
     }
-  } catch (dbError) {
-    console.error("Failed to initialize products_db.json:", dbError);
+  } catch (err) {
+    console.error("Failed to load local products backup:", err);
   }
+
+  // --- Firestore Integration Set Up ---
+  enum OperationType {
+    CREATE = 'create',
+    UPDATE = 'update',
+    DELETE = 'delete',
+    LIST = 'list',
+    GET = 'get',
+    WRITE = 'write',
+  }
+
+  interface FirestoreErrorInfo {
+    error: string;
+    operationType: OperationType;
+    path: string | null;
+    authInfo: {
+      userId?: string | null;
+      email?: string | null;
+    }
+  }
+
+  function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+    const errInfo: FirestoreErrorInfo = {
+      error: error instanceof Error ? error.message : String(error),
+      authInfo: {},
+      operationType,
+      path
+    };
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  }
+
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  let db: any = null;
+
+  if (fs.existsSync(configPath)) {
+    try {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      const firebaseApp = initializeApp(firebaseConfig);
+      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+      console.log("SUCCESS: Firebase initialized. Proactively fetching data from Firestore...");
+    } catch (err) {
+      console.error("CRITICAL: Failed to initialize Firebase:", err);
+    }
+  }
+
+  // Main synchronization function
+  async function syncFirestoreAndLocalBackups() {
+    if (!db) {
+      console.warn("WARNING: Firebase DB is not initialized. Running in local fallback mode.");
+      return;
+    }
+
+    // 1. Validate Connection to Firestore (Skill guidelines mandate)
+    try {
+      const { doc: testDoc, getDocFromServer } = await import("firebase/firestore");
+      await getDocFromServer(testDoc(db, 'test', 'connection'));
+      console.log("Firestore connection test passed successfully!");
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('the client is offline')) {
+        console.error("Please check your Firebase configuration. Client appears to be offline.");
+      } else {
+        console.log("Firestore connection check bypassed or succeeded.");
+      }
+    }
+
+    // 2. Fetch and Seed Products
+    try {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      const firestoreProducts: any[] = [];
+      querySnapshot.forEach((d) => {
+        firestoreProducts.push(d.data());
+      });
+
+      if (firestoreProducts.length > 0) {
+        activeProducts = firestoreProducts;
+        console.log(`Synced products from Firestore: Loaded ${activeProducts.length} items.`);
+        // Write backup to disk
+        fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
+      } else {
+        console.log("Firestore 'products' collection is empty. Seeding with current list...");
+        for (const item of activeProducts) {
+          const itemDocRef = doc(db, "products", String(item.id || item.sku));
+          await setDoc(itemDocRef, item);
+        }
+        console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
+      }
+    } catch (err) {
+      console.error("Error syncing products from Firestore. Using local workspace backup...");
+      handleFirestoreError(err, OperationType.LIST, "products");
+    }
+
+    // 3. Sync Orders
+    try {
+      const querySnapshot = await getDocs(collection(db, "orders"));
+      const firestoreOrders: any[] = [];
+      querySnapshot.forEach((d) => {
+        firestoreOrders.push(d.data());
+      });
+
+      if (firestoreOrders.length > 0) {
+        orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        console.log(`Synced ${orders.length} orders from Firestore.`);
+        fs.writeFileSync(ordersDbPath, JSON.stringify(orders, null, 2), "utf-8");
+      } else if (orders.length > 0) {
+        console.log(`Seeding ${orders.length} existing orders to Firestore...`);
+        for (const o of orders) {
+          await setDoc(doc(db, "orders", o.id), o);
+        }
+      }
+    } catch (err) {
+      console.error("Error syncing orders from Firestore:", err);
+    }
+
+    // 4. Sync Consultations
+    try {
+      const querySnapshot = await getDocs(collection(db, "consultations"));
+      const firestoreConsultations: any[] = [];
+      querySnapshot.forEach((d) => {
+        firestoreConsultations.push(d.data());
+      });
+
+      if (firestoreConsultations.length > 0) {
+        consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        console.log(`Synced ${consultations.length} consultations from Firestore.`);
+        fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+      } else if (consultations.length > 0) {
+        console.log(`Seeding ${consultations.length} existing consultations to Firestore...`);
+        for (const c of consultations) {
+          await setDoc(doc(db, "consultations", c.id), c);
+        }
+      }
+    } catch (err) {
+      console.error("Error syncing consultations from Firestore:", err);
+    }
+  }
+
+  // Trigger non-blocking database synchronization
+  syncFirestoreAndLocalBackups().catch((err) => {
+    console.error("Failed to run startup database sync:", err);
+  });
 
   // Middleware
   app.use(express.json({ limit: "50mb" }));
@@ -981,23 +1117,33 @@ async function startServer() {
           return String(p.sku).trim().toLowerCase() === newSkuLower;
         });
 
+        let targetProduct: any = null;
         if (idx !== -1) {
           // Update product preserving reviews
-          activeProducts[idx] = {
+          targetProduct = {
             ...activeProducts[idx],
             ...newProd,
             sku: skuRaw, // preserve sanitized SKU
             reviews: activeProducts[idx].reviews || []
           };
+          activeProducts[idx] = targetProduct;
           updated++;
         } else {
           // Add new item
-          activeProducts.push({
+          targetProduct = {
             ...newProd,
             sku: skuRaw,
             id: newProd.id || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-          });
+          };
+          activeProducts.push(targetProduct);
           added++;
+        }
+
+        // Save imported product to Firestore
+        if (db && targetProduct) {
+          setDoc(doc(db, "products", targetProduct.id), targetProduct).catch((err) => {
+            console.error(`Failed to save imported product ${targetProduct.id} to Firestore:`, err);
+          });
         }
       });
 
@@ -1023,7 +1169,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/admin/products", (req, res) => {
+  app.post("/api/admin/products", async (req, res) => {
     try {
       const { sku, manufacturerCode, name, category, group, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
       
@@ -1075,6 +1221,16 @@ async function startServer() {
         activeProducts[idx] = newProduct;
       } else {
         activeProducts.push(newProduct);
+      }
+
+      // Save to Firestore for permanent preservation
+      if (db) {
+        try {
+          await setDoc(doc(db, "products", newProduct.id), newProduct);
+          console.log(`Successfully persisted single product SKU ${cleanSku} to Firestore.`);
+        } catch (fErr) {
+          handleFirestoreError(fErr, OperationType.WRITE, `products/${newProduct.id}`);
+        }
       }
 
       // Save to server DB file
@@ -1129,7 +1285,17 @@ async function startServer() {
     };
     orders.push(newOrder);
 
-    // Save orders to db
+    // Save order to Firestore
+    if (db) {
+      try {
+        await setDoc(doc(db, "orders", newOrder.id), newOrder);
+        console.log(`Successfully saved order ${newOrder.id} to Firestore.`);
+      } catch (fErr) {
+        handleFirestoreError(fErr, OperationType.WRITE, `orders/${newOrder.id}`);
+      }
+    }
+
+    // Save orders to db backup
     try {
       fs.writeFileSync(ordersDbPath, JSON.stringify(orders, null, 2), "utf-8");
     } catch (saveErr) {
@@ -1226,7 +1392,17 @@ async function startServer() {
 
       consultations.unshift(newConsultation);
 
-      // Persist list
+      // Save to Firestore
+      if (db) {
+        try {
+          await setDoc(doc(db, "consultations", newConsultation.id), newConsultation);
+          console.log(`Successfully saved consultation ${newConsultation.id} to Firestore.`);
+        } catch (fErr) {
+          handleFirestoreError(fErr, OperationType.WRITE, `consultations/${newConsultation.id}`);
+        }
+      }
+
+      // Persist list backup
       fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
 
       const emailBody = `
@@ -1305,13 +1481,24 @@ async function startServer() {
     res.json(consultations);
   });
 
-  app.put("/api/admin/consultations/:id", (req, res) => {
+  app.put("/api/admin/consultations/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
       const idx = consultations.findIndex(c => c.id === id);
       if (idx !== -1) {
         consultations[idx].status = status || "pending";
+        
+        // Save to Firestore
+        if (db) {
+          try {
+            await setDoc(doc(db, "consultations", id), consultations[idx]);
+            console.log(`Successfully updated consultation ${id} status on Firestore.`);
+          } catch (fErr) {
+            handleFirestoreError(fErr, OperationType.UPDATE, `consultations/${id}`);
+          }
+        }
+
         fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
         return res.json({ success: true, consultation: consultations[idx] });
       }
