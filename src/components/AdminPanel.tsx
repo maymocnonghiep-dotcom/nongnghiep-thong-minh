@@ -25,6 +25,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   // States for single product creation form
   const [categories, setCategories] = useState<string[]>([]);
   const [newSku, setNewSku] = useState('');
+  const [newManufacturerCode, setNewManufacturerCode] = useState('');
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -176,6 +177,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
     const bodyData = {
       sku: newSku.trim(),
+      manufacturerCode: newManufacturerCode.trim(),
       name: newName.trim(),
       category: "Danh mục sản phẩm", // Keep category standard so general listing stays happy
       group: newGroup.trim() || finalCategory.trim(), // Use either detailed group or the selected category group
@@ -203,6 +205,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         
         // Reset states
         setNewSku('');
+        setNewManufacturerCode('');
         setNewName('');
         setNewGroup('');
         setNewPrice('');
@@ -742,7 +745,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
                 <form onSubmit={handleAddProductSubmit} className="space-y-6">
                   {/* Row 1: SKU & Name */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-1.5">
                       <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
                         Mã sản phẩm (SKU) <span className="text-rose-500">*</span>
@@ -756,6 +759,20 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                         className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
                       />
                       <span className="text-[10px] text-slate-400 block italic font-bold">Lưu ý: Nếu nhập SKU đã tồn tại, hệ thống sẽ tự động cập nhật đè thông tin lên sản phẩm đó.</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider flex items-center gap-1">
+                        Mã của hãng / Nhà SX <span className="text-[10px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded font-black lowercase normal-case">Tùy chọn</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        value={newManufacturerCode}
+                        onChange={(e) => setNewManufacturerCode(e.target.value)}
+                        placeholder="Ví dụ: SPK-5201, 89352..."
+                        className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
+                      />
+                      <span className="text-[10px] text-emerald-600 block italic font-bold">🔎 Chú/Bác có thể dùng mã này hoặc SKU để tìm kiếm song song.</span>
                     </div>
 
                     <div className="space-y-1.5">
@@ -797,7 +814,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                               setIsCategoryInputFocused(false);
                             }, 250);
                           }}
-                          placeholder="Nhập hoặc để trỏ chuột xem các nhóm..."
+                          placeholder="Nhấp vào để chọn trong các nhóm mặt hàng..."
                           className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all cursor-pointer text-sm"
                         />
                         <div className="absolute right-4 top-3.5 text-slate-400 pointer-events-none">
@@ -812,43 +829,49 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute left-0 right-0 top-full z-50 bg-white border border-slate-200 rounded-2xl shadow-xl mt-1.5 max-h-[340px] overflow-y-auto flex flex-col"
+                            className="absolute left-0 right-0 top-full z-50 bg-white border border-slate-200 rounded-2xl shadow-xl mt-1.5 max-h-[360px] overflow-y-auto flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="p-2 flex-1 overflow-y-auto max-h-52">
                               <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
-                                Danh sách nhóm có sẵn (Bấm để chọn nhanh)
+                                Danh sách nhóm có sẵn (Chú/Bác bấm chọn nhanh)
                               </div>
                               {categories
                                 .filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "")
-                                .filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase()))
-                                .map((cat, idx) => (
-                                  <button
-                                    type="button"
-                                    key={idx}
-                                    onClick={() => {
-                                      setSelectedCategory(cat);
-                                      setIsCategoryInputFocused(false);
-                                      setIsCategoryHovered(false);
-                                    }}
-                                    className="w-full text-left font-bold text-xs text-slate-700 hover:text-white hover:bg-brand-primary px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-between"
-                                  >
-                                    <span>{cat}</span>
-                                    <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-brand-secondary">Sẵn có</span>
-                                  </button>
-                                ))}
-                              
-                              {categories.filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "").filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase())).length === 0 && (
-                                <div className="p-3 text-xs text-slate-400 italic font-medium">
-                                  Chưa có nhóm trùng khớp trong danh sách.
-                                </div>
-                              )}
+                                .map((cat, idx) => {
+                                  const isSelected = selectedCategory === cat;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={idx}
+                                      onMouseDown={(e) => {
+                                        // Prevents blur event on input so selection registers immediately
+                                        e.preventDefault();
+                                        setSelectedCategory(cat);
+                                        setIsCategoryInputFocused(false);
+                                        setIsCategoryHovered(false);
+                                      }}
+                                      className={`w-full text-left font-bold text-xs px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between my-0.5 ${
+                                        isSelected 
+                                          ? 'bg-brand-primary text-white shadow-sm' 
+                                          : 'text-slate-700 hover:text-white hover:bg-brand-primary/95 bg-transparent'
+                                      }`}
+                                    >
+                                      <span>{cat}</span>
+                                      {isSelected ? (
+                                        <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-black">✓ Đang chọn</span>
+                                      ) : (
+                                        <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-brand-secondary">Sẵn có</span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
                             </div>
 
                             {/* Creating a brand new custom category */}
                             <div className="border-t border-slate-100 p-3 bg-slate-50/80 rounded-b-2xl flex flex-col gap-1.5">
                               <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest block">
-                                ➕ Tự tạo nhóm hàng mới chưa có trên web
+                                ➕ Tự tạo nhóm hàng mới (Khi không có trong danh sách trên)
                               </span>
                               <div className="flex gap-2">
                                 <input 
@@ -863,10 +886,15 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                 />
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                                  onMouseDown={(e) => {
+                                    e.preventDefault(); // Ignore blur
                                     if (customCategory.trim()) {
-                                      setSelectedCategory(customCategory.trim());
+                                      const trimmed = customCategory.trim();
+                                      setSelectedCategory(trimmed);
+                                      // Add to current loaded categories so it shows up in real time if they reopen
+                                      if (!categories.includes(trimmed)) {
+                                        setCategories(prev => [...prev, trimmed]);
+                                      }
                                       setCustomCategory('');
                                       setIsCategoryInputFocused(false);
                                       setIsCustomCategoryFocused(false);

@@ -1025,7 +1025,7 @@ async function startServer() {
 
   app.post("/api/admin/products", (req, res) => {
     try {
-      const { sku, name, category, group, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
+      const { sku, manufacturerCode, name, category, group, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
       
       if (!sku || !sku.trim()) {
         return res.status(400).json({ success: false, message: "Mã SKU không được trống!" });
@@ -1056,6 +1056,7 @@ async function startServer() {
       const newProduct = {
         id: idx !== -1 ? activeProducts[idx].id : `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         sku: cleanSku,
+        manufacturerCode: manufacturerCode ? String(manufacturerCode).trim() : undefined,
         name: name.trim(),
         category: category.trim(),
         group: group ? group.trim() : "",

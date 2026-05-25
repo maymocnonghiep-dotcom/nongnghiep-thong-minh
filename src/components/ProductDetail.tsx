@@ -219,10 +219,15 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                     {product.name}
                   </h1>
 
-                  <div className="mb-4">
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
                     <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                      Mã: {product.sku}
+                      Mã SKU: {product.sku}
                     </span>
+                    {product.manufacturerCode && (
+                      <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100">
+                        Mã của hãng: {product.manufacturerCode}
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-4 mb-6">

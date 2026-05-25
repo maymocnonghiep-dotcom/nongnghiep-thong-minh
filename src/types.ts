@@ -8,6 +8,7 @@ export interface ProductReview {
 export interface Product {
   id: string;
   sku: string;
+  manufacturerCode?: string;
   name: string;
   category: string;
   group: string;

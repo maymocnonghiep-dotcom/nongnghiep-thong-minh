@@ -199,7 +199,11 @@ export default function App() {
       } else if (path.startsWith('/san-pham/')) {
         const prodId = path.replace('/san-pham/', '');
         if (products.length > 0) {
-          const found = products.find(p => p.id === prodId || p.sku === prodId);
+          const found = products.find(p => 
+            p.id === prodId || 
+            p.sku === prodId || 
+            (p.manufacturerCode && p.manufacturerCode === prodId)
+          );
           if (found) {
             setSelectedProduct(found);
             setCurrentView('product-detail');

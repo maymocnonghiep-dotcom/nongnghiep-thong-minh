@@ -25,7 +25,8 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
   const searchResults = searchQuery.trim().length > 0
     ? products.filter(p => 
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+        p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.manufacturerCode && p.manufacturerCode.toLowerCase().includes(searchQuery.toLowerCase()))
       ).slice(0, 6)
     : [];
 
@@ -191,9 +192,12 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                           </div>
                           <div className="flex-1 overflow-hidden">
                             <h4 className="text-sm font-bold text-slate-800 truncate group-hover/res:text-brand-primary transition-colors">{product.name}</h4>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                               <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">SKU: {product.sku}</span>
-                              <span className="text-xs font-bold text-brand-primary">{product.price.toLocaleString('vi-VN')}₫</span>
+                              {product.manufacturerCode && (
+                                <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">Mã hãng: {product.manufacturerCode}</span>
+                              )}
+                              <span className="text-xs font-bold text-brand-primary ml-1">{product.price.toLocaleString('vi-VN')}₫</span>
                             </div>
                           </div>
                           <ArrowRight size={16} className="text-slate-300 group-hover/res:text-brand-primary group-hover/res:translate-x-1 transition-all" />
@@ -418,8 +422,14 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                       className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg text-left"
                     >
                       <img src={getHighResImageUrl(product.image)} alt={product.name} className="w-10 h-10 rounded object-cover" />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold truncate">{product.name}</p>
+                        <div className="flex flex-wrap items-center gap-1 my-0.5">
+                          <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-50 px-1 rounded border border-slate-100">SKU: {product.sku}</span>
+                          {product.manufacturerCode && (
+                            <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100">Hãng: {product.manufacturerCode}</span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-brand-primary font-bold">{product.price.toLocaleString('vi-VN')}đ</p>
                       </div>
                     </button>

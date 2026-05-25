@@ -40,10 +40,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onAddToCart
       {/* Product Info */}
       <div className="flex-grow flex flex-col">
         <div className="mb-3">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1">
             <span className="text-[8px] font-mono font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 uppercase">
               SKU: {product.sku}
             </span>
+            {product.manufacturerCode && (
+              <span className="text-[8px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 uppercase">
+                Mã hãng: {product.manufacturerCode}
+              </span>
+            )}
           </div>
           <h3 className="font-sans font-bold text-slate-800 text-sm leading-tight line-clamp-2 group-hover:text-brand-primary transition-colors mb-1">
             {product.name}
