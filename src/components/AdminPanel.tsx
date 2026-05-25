@@ -45,6 +45,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [newImagesList, setNewImagesList] = useState<string[]>([]);
   const [imageInputVal, setImageInputVal] = useState('');
   const [isCategoryHovered, setIsCategoryHovered] = useState(false);
+  const [isCategoryInputFocused, setIsCategoryInputFocused] = useState(false);
+  const [isCustomCategoryFocused, setIsCustomCategoryFocused] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'orders') {
@@ -175,8 +177,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     const bodyData = {
       sku: newSku.trim(),
       name: newName.trim(),
-      category: finalCategory.trim(),
-      group: newGroup.trim(),
+      category: "Danh mục sản phẩm", // Keep category standard so general listing stays happy
+      group: newGroup.trim() || finalCategory.trim(), // Use either detailed group or the selected category group
       price: parseFloat(newPrice) || 0,
       originalPrice: newOriginalPrice ? parseFloat(newOriginalPrice) : undefined,
       description: newDescription.trim(),
@@ -787,7 +789,14 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           required
                           value={selectedCategory}
                           onChange={(e) => setSelectedCategory(e.target.value)}
-                          onFocus={() => setIsCategoryHovered(true)}
+                          onFocus={() => {
+                            setIsCategoryInputFocused(true);
+                          }}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setIsCategoryInputFocused(false);
+                            }, 250);
+                          }}
                           placeholder="Nhập hoặc để trỏ chuột xem các nhóm..."
                           className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all cursor-pointer text-sm"
                         />
@@ -796,40 +805,80 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                         </div>
                       </div>
 
-                      {/* Hover Dropdown of groups */}
+                      {/* Hover / Focused Dropdown of groups */}
                       <AnimatePresence>
-                        {isCategoryHovered && categories.length > 0 && (
+                        {(isCategoryHovered || isCategoryInputFocused || isCustomCategoryFocused) && categories.length > 0 && (
                           <motion.div 
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute left-0 right-0 top-full z-50 bg-white border border-slate-200 rounded-2xl shadow-xl mt-1.5 max-h-60 overflow-y-auto p-2"
+                            className="absolute left-0 right-0 top-full z-50 bg-white border border-slate-200 rounded-2xl shadow-xl mt-1.5 max-h-[340px] overflow-y-auto flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
-                              Danh sách nhóm có sẵn (Bấm để chọn nhanh)
+                            <div className="p-2 flex-1 overflow-y-auto max-h-52">
+                              <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
+                                Danh sách nhóm có sẵn (Bấm để chọn nhanh)
+                              </div>
+                              {categories
+                                .filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "")
+                                .filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase()))
+                                .map((cat, idx) => (
+                                  <button
+                                    type="button"
+                                    key={idx}
+                                    onClick={() => {
+                                      setSelectedCategory(cat);
+                                      setIsCategoryInputFocused(false);
+                                      setIsCategoryHovered(false);
+                                    }}
+                                    className="w-full text-left font-bold text-xs text-slate-700 hover:text-white hover:bg-brand-primary px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-between"
+                                  >
+                                    <span>{cat}</span>
+                                    <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-brand-secondary">Sẵn có</span>
+                                  </button>
+                                ))}
+                              
+                              {categories.filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "").filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase())).length === 0 && (
+                                <div className="p-3 text-xs text-slate-400 italic font-medium">
+                                  Chưa có nhóm trùng khớp trong danh sách.
+                                </div>
+                              )}
                             </div>
-                            {categories
-                              .filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase()))
-                              .map((cat, idx) => (
+
+                            {/* Creating a brand new custom category */}
+                            <div className="border-t border-slate-100 p-3 bg-slate-50/80 rounded-b-2xl flex flex-col gap-1.5">
+                              <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest block">
+                                ➕ Tự tạo nhóm hàng mới chưa có trên web
+                              </span>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="text"
+                                  placeholder="Ví dụ: Máy bơm, Phụ kiện..."
+                                  value={customCategory}
+                                  onChange={(e) => setCustomCategory(e.target.value)}
+                                  onFocus={() => setIsCustomCategoryFocused(true)}
+                                  onBlur={() => setIsCustomCategoryFocused(false)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 bg-white border border-slate-250 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm text-slate-800"
+                                />
                                 <button
                                   type="button"
-                                  key={idx}
-                                  onClick={() => {
-                                    setSelectedCategory(cat);
-                                    setIsCategoryHovered(false);
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (customCategory.trim()) {
+                                      setSelectedCategory(customCategory.trim());
+                                      setCustomCategory('');
+                                      setIsCategoryInputFocused(false);
+                                      setIsCustomCategoryFocused(false);
+                                      setIsCategoryHovered(false);
+                                    }
                                   }}
-                                  className="w-full text-left font-bold text-xs text-slate-700 hover:text-white hover:bg-brand-primary px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-between"
+                                  className="bg-brand-primary hover:bg-brand-secondary text-white text-xs px-3 py-1.5 rounded-xl font-bold transition-all shadow-sm cursor-pointer shrink-0"
                                 >
-                                  <span>{cat}</span>
-                                  <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-brand-secondary">Sẵn có</span>
+                                  Thêm
                                 </button>
-                              ))}
-                            
-                            {categories.filter(cat => !selectedCategory || cat.toLowerCase().includes(selectedCategory.toLowerCase())).length === 0 && (
-                              <div className="p-3 text-xs text-slate-400 italic font-medium">
-                                Chưa có nhóm trùng khớp. Tiếp tục gõ để tự thêm mới nhóm hàng này!
                               </div>
-                            )}
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>

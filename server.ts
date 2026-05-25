@@ -1096,8 +1096,17 @@ async function startServer() {
   });
 
   app.get("/api/categories", (req, res) => {
-    const categories = [...new Set(activeProducts.map(p => p.category))];
-    res.json(categories);
+    const categoriesFromGroups = [...new Set(activeProducts.map(p => p.group).filter(Boolean))];
+    const defaultCategoriesList = [
+      "Thiết bị tưới",
+      "Đồ điện",
+      "Camera An Ninh",
+      "Vật tư nước",
+      "Dụng cụ làm vườn",
+      "Đèn năng lượng mặt trời"
+    ];
+    const mergedList = Array.from(new Set([...categoriesFromGroups, ...defaultCategoriesList]));
+    res.json(mergedList);
   });
 
   app.get("/api/admin/orders", (req, res) => {
