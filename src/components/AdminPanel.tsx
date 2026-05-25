@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin, PlusCircle, Trash2, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
@@ -48,6 +48,21 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [isCategoryHovered, setIsCategoryHovered] = useState(false);
   const [isCategoryInputFocused, setIsCategoryInputFocused] = useState(false);
   const [isCustomCategoryFocused, setIsCustomCategoryFocused] = useState(false);
+  
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'orders') {
@@ -793,9 +808,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   {/* Row 2: Category selection & Custom input */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/40 p-5 rounded-2xl border border-slate-100">
                     <div 
+                      ref={dropdownRef}
                       className="space-y-1.5 relative"
-                      onMouseEnter={() => setIsCategoryHovered(true)}
-                      onMouseLeave={() => setIsCategoryHovered(false)}
                     >
                       <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
                         Chọn nhóm mặt hàng <span className="text-rose-500">*</span>
@@ -805,14 +819,15 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           type="text"
                           required
                           value={selectedCategory}
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          onFocus={() => {
-                            setIsCategoryInputFocused(true);
+                          onChange={(e) => {
+                            setSelectedCategory(e.target.value);
+                            setIsDropdownOpen(true);
                           }}
-                          onBlur={() => {
-                            setTimeout(() => {
-                              setIsCategoryInputFocused(false);
-                            }, 250);
+                          onFocus={() => {
+                            setIsDropdownOpen(true);
+                          }}
+                          onClick={() => {
+                            setIsDropdownOpen(true);
                           }}
                           placeholder="Nhấp vào để chọn trong các nhóm mặt hàng..."
                           className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all cursor-pointer text-sm"
@@ -824,7 +839,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
                       {/* Hover / Focused Dropdown of groups */}
                       <AnimatePresence>
-                        {(isCategoryHovered || isCategoryInputFocused || isCustomCategoryFocused) && categories.length > 0 && (
+                        {isDropdownOpen && categories.length > 0 && (
                           <motion.div 
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -844,12 +859,9 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                     <button
                                       type="button"
                                       key={idx}
-                                      onMouseDown={(e) => {
-                                        // Prevents blur event on input so selection registers immediately
-                                        e.preventDefault();
+                                      onClick={() => {
                                         setSelectedCategory(cat);
-                                        setIsCategoryInputFocused(false);
-                                        setIsCategoryHovered(false);
+                                        setIsDropdownOpen(false);
                                       }}
                                       className={`w-full text-left font-bold text-xs px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between my-0.5 ${
                                         isSelected 
@@ -879,15 +891,11 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                   placeholder="Ví dụ: Máy bơm, Phụ kiện..."
                                   value={customCategory}
                                   onChange={(e) => setCustomCategory(e.target.value)}
-                                  onFocus={() => setIsCustomCategoryFocused(true)}
-                                  onBlur={() => setIsCustomCategoryFocused(false)}
-                                  onClick={(e) => e.stopPropagation()}
                                   className="flex-1 bg-white border border-slate-250 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm text-slate-800"
                                 />
                                 <button
                                   type="button"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault(); // Ignore blur
+                                  onClick={() => {
                                     if (customCategory.trim()) {
                                       const trimmed = customCategory.trim();
                                       setSelectedCategory(trimmed);
@@ -896,9 +904,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                         setCategories(prev => [...prev, trimmed]);
                                       }
                                       setCustomCategory('');
-                                      setIsCategoryInputFocused(false);
-                                      setIsCustomCategoryFocused(false);
-                                      setIsCategoryHovered(false);
+                                      setIsDropdownOpen(false);
                                     }
                                   }}
                                   className="bg-brand-primary hover:bg-brand-secondary text-white text-xs px-3 py-1.5 rounded-xl font-bold transition-all shadow-sm cursor-pointer shrink-0"
