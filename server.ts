@@ -1223,14 +1223,11 @@ async function startServer() {
         activeProducts.push(newProduct);
       }
 
-      // Save to Firestore for permanent preservation
+      // Save to Firestore for permanent preservation (non-blocking)
       if (db) {
-        try {
-          await setDoc(doc(db, "products", newProduct.id), newProduct);
-          console.log(`Successfully persisted single product SKU ${cleanSku} to Firestore.`);
-        } catch (fErr) {
-          handleFirestoreError(fErr, OperationType.WRITE, `products/${newProduct.id}`);
-        }
+        setDoc(doc(db, "products", newProduct.id), newProduct)
+          .then(() => console.log(`Background: Successfully persisted single product SKU ${cleanSku} to Firestore.`))
+          .catch((fErr) => console.error(`Background Error saving ${newProduct.id} to Firestore:`, fErr));
       }
 
       // Save to server DB file
@@ -1285,14 +1282,11 @@ async function startServer() {
     };
     orders.push(newOrder);
 
-    // Save order to Firestore
+    // Save order to Firestore (non-blocking)
     if (db) {
-      try {
-        await setDoc(doc(db, "orders", newOrder.id), newOrder);
-        console.log(`Successfully saved order ${newOrder.id} to Firestore.`);
-      } catch (fErr) {
-        handleFirestoreError(fErr, OperationType.WRITE, `orders/${newOrder.id}`);
-      }
+      setDoc(doc(db, "orders", newOrder.id), newOrder)
+        .then(() => console.log(`Background: Successfully saved order ${newOrder.id} to Firestore.`))
+        .catch((fErr) => console.error(`Background Error saving order ${newOrder.id}:`, fErr));
     }
 
     // Save orders to db backup
@@ -1392,14 +1386,11 @@ async function startServer() {
 
       consultations.unshift(newConsultation);
 
-      // Save to Firestore
+      // Save to Firestore (non-blocking)
       if (db) {
-        try {
-          await setDoc(doc(db, "consultations", newConsultation.id), newConsultation);
-          console.log(`Successfully saved consultation ${newConsultation.id} to Firestore.`);
-        } catch (fErr) {
-          handleFirestoreError(fErr, OperationType.WRITE, `consultations/${newConsultation.id}`);
-        }
+        setDoc(doc(db, "consultations", newConsultation.id), newConsultation)
+          .then(() => console.log(`Background: Successfully saved consultation ${newConsultation.id} to Firestore.`))
+          .catch((fErr) => console.error(`Background Error saving consultation ${newConsultation.id}:`, fErr));
       }
 
       // Persist list backup
@@ -1489,14 +1480,11 @@ async function startServer() {
       if (idx !== -1) {
         consultations[idx].status = status || "pending";
         
-        // Save to Firestore
+        // Save to Firestore (non-blocking)
         if (db) {
-          try {
-            await setDoc(doc(db, "consultations", id), consultations[idx]);
-            console.log(`Successfully updated consultation ${id} status on Firestore.`);
-          } catch (fErr) {
-            handleFirestoreError(fErr, OperationType.UPDATE, `consultations/${id}`);
-          }
+          setDoc(doc(db, "consultations", id), consultations[idx])
+            .then(() => console.log(`Background: Successfully updated consultation ${id} status on Firestore.`))
+            .catch((fErr) => console.error(`Background Error updating status of consultation ${id}:`, fErr));
         }
 
         fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
