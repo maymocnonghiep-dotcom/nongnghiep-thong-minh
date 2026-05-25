@@ -23,12 +23,20 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [loadingConsultations, setLoadingConsultations] = useState(false);
 
   // States for single product creation form
-  const [categories, setCategories] = useState<string[]>([]);
+  const defaultCategoriesList = [
+    "Thiết bị tưới",
+    "Đồ điện",
+    "Camera An Ninh",
+    "Vật tư nước",
+    "Dụng cụ làm vườn",
+    "Đèn năng lượng mặt trời"
+  ];
+  const [categories, setCategories] = useState<string[]>(defaultCategoriesList);
   const [newSku, setNewSku] = useState('');
   const [newManufacturerCode, setNewManufacturerCode] = useState('');
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Thiết bị tưới');
   const [customCategory, setCustomCategory] = useState('');
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [newPrice, setNewPrice] = useState('');
@@ -53,6 +61,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    fetchCategories();
+
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
@@ -92,11 +102,12 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     fetch('/api/categories')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          setCategories(data);
-          if (data.length > 0 && !selectedCategory) {
-            setSelectedCategory(data[0]);
-          }
+        if (Array.isArray(data) && data.length > 0) {
+          setCategories(prev => {
+            const merged = Array.from(new Set([...prev, ...data]));
+            return merged;
+          });
+          setSelectedCategory(prev => prev || data[0]);
         }
       })
       .catch(err => console.error('Error fetching categories:', err));
