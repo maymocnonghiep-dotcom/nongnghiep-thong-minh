@@ -3,6 +3,7 @@ import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, Shopp
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
+import { subcategoriesMap } from '../categoriesData';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -37,7 +38,24 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Thiết bị tưới');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('bec-phun');
   const [customCategory, setCustomCategory] = useState('');
+
+  useEffect(() => {
+    if (selectedCategory && subcategoriesMap[selectedCategory]) {
+      const subs = subcategoriesMap[selectedCategory];
+      if (subs.length > 0) {
+        setSelectedSubcategoryId(subs[0].id);
+        setNewGroup(subs[0].name);
+      } else {
+        setSelectedSubcategoryId('');
+        setNewGroup('');
+      }
+    } else {
+      setSelectedSubcategoryId('');
+      setNewGroup('');
+    }
+  }, [selectedCategory]);
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [newPrice, setNewPrice] = useState('');
   const [newOriginalPrice, setNewOriginalPrice] = useState('');
@@ -188,6 +206,38 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
     setIsAddingProduct(true);
 
+    let finalSubcategoryId = selectedSubcategoryId;
+    let finalSubcategoryName = '';
+
+    if (subcategoriesMap[finalCategory]) {
+      if (finalSubcategoryId === 'custom') {
+        const nameVal = newGroup.trim();
+        if (!nameVal) {
+          setProductErrorMessage('Vui lòng điền tên thư mục con mới!');
+          setIsAddingProduct(false);
+          return;
+        }
+        finalSubcategoryName = nameVal;
+        finalSubcategoryId = nameVal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+      } else {
+        const found = subcategoriesMap[finalCategory].find(s => s.id === finalSubcategoryId);
+        if (found) {
+          finalSubcategoryName = found.name;
+        } else {
+          finalSubcategoryName = newGroup.trim() || finalCategory;
+        }
+      }
+    } else {
+      const nameVal = newGroup.trim();
+      if (!nameVal) {
+        setProductErrorMessage('Vui lòng điền tên thư mục con!');
+        setIsAddingProduct(false);
+        return;
+      }
+      finalSubcategoryName = nameVal;
+      finalSubcategoryId = nameVal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+    }
+
     const specsObject: Record<string, string> = {};
     newSpecs.forEach(spec => {
       if (spec.key.trim() && spec.value.trim()) {
@@ -206,7 +256,9 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       manufacturerCode: newManufacturerCode.trim(),
       name: newName.trim(),
       category: "Danh mục sản phẩm", // Keep category standard so general listing stays happy
-      group: newGroup.trim() || finalCategory.trim(), // Use either detailed group or the selected category group
+      group: finalCategory.trim(), // Keep this as the main Group (e.g. "Camera An Ninh")
+      subcategoryId: finalSubcategoryId,
+      subcategoryName: finalSubcategoryName,
       price: parseFloat(newPrice) || 0,
       originalPrice: newOriginalPrice ? parseFloat(newOriginalPrice) : undefined,
       description: newDescription.trim(),
@@ -741,34 +793,6 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   </h2>
                 </div>
 
-                {productSuccessMessage && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }} 
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-5 bg-green-50 text-green-800 rounded-2xl border border-green-150 flex items-start gap-3"
-                  >
-                    <CheckCircle2 size={22} className="text-green-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-extrabold text-green-900 mb-1">Thêm sản phẩm thành công!</h4>
-                      <p className="text-xs text-green-700 opacity-90">{productSuccessMessage}</p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {productErrorMessage && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }} 
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-5 bg-rose-50 text-rose-800 rounded-2xl border border-rose-150 flex items-start gap-3"
-                  >
-                    <AlertCircle size={22} className="text-rose-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-extrabold text-rose-900 mb-1">Cảnh báo lỗi!</h4>
-                      <p className="text-xs text-rose-700 opacity-90">{productErrorMessage}</p>
-                    </div>
-                  </motion.div>
-                )}
-
                 <form onSubmit={handleAddProductSubmit} className="space-y-6">
                   {/* Row 1: SKU & Name */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -817,13 +841,13 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   </div>
 
                   {/* Row 2: Category selection & Custom input */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/40 p-5 rounded-2xl border border-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/40 p-5 rounded-2xl border border-slate-100 animate-fadeIn">
                     <div 
                       ref={dropdownRef}
                       className="space-y-1.5 relative"
                     >
                       <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
-                        Chọn nhóm mặt hàng <span className="text-rose-500">*</span>
+                        Danh mục chính (Nhóm hàng chính) <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <input 
@@ -841,7 +865,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                             setIsDropdownOpen(true);
                           }}
                           placeholder="Nhấp vào để chọn trong các nhóm mặt hàng..."
-                          className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all cursor-pointer text-sm"
+                          className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-bold transition-all cursor-pointer text-sm shadow-sm"
                         />
                         <div className="absolute right-4 top-3.5 text-slate-400 pointer-events-none">
                           <Plus size={16} />
@@ -860,7 +884,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           >
                             <div className="p-2 flex-1 overflow-y-auto max-h-52">
                               <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
-                                Danh sách nhóm có sẵn (Bạn bấm chọn nhanh)
+                                Danh sách danh mục chính hiện có (Bấm để chọn nhanh)
                               </div>
                               {categories.filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "").length > 0 ? (
                                 categories
@@ -885,14 +909,14 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                         {isSelected ? (
                                           <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-black font-sans">✓ Đang chọn</span>
                                         ) : (
-                                          <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Sẵn có</span>
+                                          <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Chọn</span>
                                         )}
                                       </button>
                                     );
                                   })
                               ) : (
                                 <div className="p-3 text-xs text-slate-400 italic">
-                                  Đang tải danh sách nhóm hoặc chưa có nhóm nào...
+                                  Đang tải danh sách...
                                 </div>
                               )}
                             </div>
@@ -900,7 +924,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                             {/* Creating a brand new custom category */}
                             <div className="border-t border-slate-100 p-3 bg-slate-50/80 rounded-b-2xl flex flex-col gap-1.5">
                               <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest block">
-                                ➕ Tự tạo nhóm hàng mới (Khi không có trong danh sách trên)
+                                ➕ Thêm danh mục chính hoàn toàn mới
                               </span>
                               <div className="flex gap-2">
                                 <input 
@@ -916,7 +940,6 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                     if (customCategory.trim()) {
                                       const trimmed = customCategory.trim();
                                       setSelectedCategory(trimmed);
-                                      // Add to current loaded categories so it shows up in real time if they reopen
                                       if (!categories.includes(trimmed)) {
                                         setCategories(prev => [...prev, trimmed]);
                                       }
@@ -926,7 +949,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                   }}
                                   className="bg-brand-primary hover:bg-brand-secondary text-white text-xs px-3 py-1.5 rounded-xl font-bold transition-all shadow-sm cursor-pointer shrink-0"
                                 >
-                                  Thêm
+                                  Tạo mới
                                 </button>
                               </div>
                             </div>
@@ -936,16 +959,61 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-black text-slate-500 block uppercase tracking-wider">
-                        Phân loại chi tiết (Không bắt buộc)
+                      <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                        Thư mục con (Ví dụ: camera imou, camera ezviz, ...) <span className="text-rose-500">*</span>
                       </label>
-                      <input 
-                        type="text" 
-                        value={newGroup}
-                        onChange={(e) => setNewGroup(e.target.value)}
-                        placeholder="Ví dụ: Béc tưới, Phụ kiện nối..."
-                        className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary rounded-xl px-4 py-3 font-medium transition-all"
-                      />
+                      {subcategoriesMap[selectedCategory] && subcategoriesMap[selectedCategory].length > 0 ? (
+                        <div className="space-y-3">
+                          <select
+                            value={selectedSubcategoryId}
+                            onChange={(e) => {
+                              setSelectedSubcategoryId(e.target.value);
+                              if (e.target.value !== 'custom') {
+                                const matched = subcategoriesMap[selectedCategory].find(s => s.id === e.target.value);
+                                setNewGroup(matched ? matched.name : '');
+                              } else {
+                                setNewGroup('');
+                              }
+                            }}
+                            className="w-full text-slate-800 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all text-sm cursor-pointer shadow-sm"
+                          >
+                            {subcategoriesMap[selectedCategory].map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </option>
+                            ))}
+                            <option value="custom">✍️ Tự nhập thư mục con mới/khác...</option>
+                          </select>
+
+                          {selectedSubcategoryId === 'custom' && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="relative"
+                            >
+                              <input 
+                                type="text" 
+                                required
+                                value={newGroup}
+                                onChange={(e) => setNewGroup(e.target.value)}
+                                placeholder="Nhập tên nhóm con (Ví dụ: camera imou, béc tưới xịn...)"
+                                className="w-full text-slate-850 bg-white border border-slate-200 focus:border-brand-primary rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-inner"
+                              />
+                            </motion.div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <input 
+                            type="text" 
+                            required
+                            value={newGroup}
+                            onChange={(e) => setNewGroup(e.target.value)}
+                            placeholder="Nhập tên thư mục con (Ví dụ: Camera IMOU, Đầu tưới sương...)"
+                            className="w-full text-slate-850 bg-white border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary rounded-xl px-4 py-3 font-semibold transition-all text-sm shadow-sm"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1168,6 +1236,39 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                       </div>
                     )}
                   </div>
+
+                  {/* Status Messages */}
+                  {(productSuccessMessage || productErrorMessage) && (
+                    <div className="pt-4 space-y-4">
+                      {productSuccessMessage && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }} 
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-green-50 text-green-800 rounded-2xl border border-green-150 flex items-start gap-3"
+                        >
+                          <CheckCircle2 size={20} className="text-green-600 shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-extrabold text-green-900 mb-1 text-sm">Thêm sản phẩm thành công!</h4>
+                            <p className="text-xs text-green-700 opacity-90 font-medium">{productSuccessMessage}</p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {productErrorMessage && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }} 
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-rose-50 text-rose-800 rounded-2xl border border-rose-150 flex items-start gap-3"
+                        >
+                          <AlertCircle size={20} className="text-rose-600 shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-extrabold text-rose-900 mb-1 text-sm">Cảnh báo lỗi!</h4>
+                            <p className="text-xs text-rose-700 opacity-90 font-medium">{productErrorMessage}</p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3 font-sans">

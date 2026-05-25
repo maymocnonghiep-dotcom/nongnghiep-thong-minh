@@ -3,7 +3,7 @@ import { Product } from '../types';
 import { Star, ShoppingCart, ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getHighResImageUrl } from '../utils';
-import { subcategoriesMap, getMatchedSubcategory } from '../categoriesData';
+import { subcategoriesMap, getMatchedSubcategory, mainCategories } from '../categoriesData';
 
 interface ProductDetailProps {
   product: Product;
@@ -11,15 +11,6 @@ interface ProductDetailProps {
   onAddToCart: (product: Product) => void;
   onNavigate?: (view: string) => void;
 }
-
-const mainCategories = [
-  'Thiết bị tưới',
-  'Đồ điện',
-  'Vật tư nước',
-  'Dụng cụ làm vườn',
-  'Camera An Ninh',
-  'Đèn năng lượng mặt trời',
-];
 
 export default function ProductDetail({ product, onBack, onAddToCart, onNavigate }: ProductDetailProps) {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -107,7 +98,7 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                       {isCurrentGroup && subcategoriesMap[cat] && (
                         <ul className="pl-4 py-1.5 border-l border-slate-200 ml-3 flex flex-col gap-1 mt-1">
                           {subcategoriesMap[cat].map((subcat) => {
-                            const matchedSubId = getMatchedSubcategory(product.name, subcategoriesMap[cat]);
+                            const matchedSubId = getMatchedSubcategory(product.name, subcategoriesMap[cat], product.subcategoryId);
                             const isCurrentSub = matchedSubId === subcat.id;
                             const navigateView = `category-${cat}::${subcat.id}`;
 
@@ -160,7 +151,7 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                           className="w-full h-full object-cover" 
                           style={{
                             transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                            transform: isZooming ? 'scale(2.2)' : 'scale(1)',
+                            transform: isZooming ? 'scale(1.6)' : 'scale(1)',
                             transition: isZooming ? 'none' : 'transform 0.2s ease-out, transform-origin 0.2s ease-out',
                           }}
                           alt={product.name} 

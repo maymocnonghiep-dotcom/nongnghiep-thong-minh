@@ -87,7 +87,7 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
 
     if (categoryFilter && selectedSubcategory !== 'all' && subcategoriesMap[categoryFilter]) {
       filtered = filtered.filter(p => 
-        matchesSubcategoryPattern(p.name, p.description, selectedSubcategory, subcategoriesMap[categoryFilter])
+        matchesSubcategoryPattern(p.name, p.description, selectedSubcategory, subcategoriesMap[categoryFilter], p.subcategoryId)
       );
     }
 

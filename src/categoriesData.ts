@@ -4,6 +4,15 @@ export interface Subcategory {
   keywords: string[];
 }
 
+export const mainCategories = [
+  'Thiết bị tưới',
+  'Đồ điện',
+  'Vật tư nước',
+  'Dụng cụ làm vườn',
+  'Camera An Ninh',
+  'Đèn năng lượng mặt trời',
+];
+
 export const subcategoriesMap: Record<string, Subcategory[]> = {
   'Thiết bị tưới': [
     { id: 'bec-phun', name: 'Béc & Phun mưa, Phun sương', keywords: ['bét', 'béc', 'phun', 'sương', 'màn sương'] },
@@ -49,7 +58,11 @@ export const subcategoriesMap: Record<string, Subcategory[]> = {
   ],
 };
 
-export const getMatchedSubcategory = (productName: string, subcategories: Subcategory[]): string | null => {
+export const getMatchedSubcategory = (productName: string, subcategories: Subcategory[], productSubcategoryId?: string): string | null => {
+  if (productSubcategoryId) {
+    const found = subcategories.find(s => s.id === productSubcategoryId);
+    if (found) return found.id;
+  }
   const nameLower = productName.toLowerCase();
   for (const sub of subcategories) {
     if (sub.keywords.some(kw => nameLower.includes(kw.toLowerCase()))) {
@@ -59,9 +72,11 @@ export const getMatchedSubcategory = (productName: string, subcategories: Subcat
   return null;
 };
 
-export const matchesSubcategoryPattern = (productName: string, productDesc: string, subId: string, subcategories: Subcategory[]): boolean => {
+export const matchesSubcategoryPattern = (productName: string, productDesc: string, subId: string, subcategories: Subcategory[], productSubcategoryId?: string): boolean => {
   if (subId === 'all') return true;
   
+  if (productSubcategoryId === subId) return true;
+
   const sub = subcategories.find(s => s.id === subId);
   if (!sub) return false;
 

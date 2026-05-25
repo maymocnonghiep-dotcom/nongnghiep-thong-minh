@@ -972,6 +972,26 @@ async function startServer() {
     throw new Error(JSON.stringify(errInfo));
   }
 
+  function cleanUndefinedForFirestore(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return null;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(item => cleanUndefinedForFirestore(item));
+    }
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        if (val !== undefined) {
+          cleaned[key] = cleanUndefinedForFirestore(val);
+        }
+      }
+      return cleaned;
+    }
+    return obj;
+  }
+
   const configPath = path.join(process.cwd(), "firebase-applet-config.json");
   let db: any = null;
 
@@ -1023,7 +1043,7 @@ async function startServer() {
         console.log("Firestore 'products' collection is empty. Seeding with current list...");
         for (const item of activeProducts) {
           const itemDocRef = doc(db, "products", String(item.id || item.sku));
-          await setDoc(itemDocRef, item);
+          await setDoc(itemDocRef, cleanUndefinedForFirestore(item));
         }
         console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
       }
@@ -1047,7 +1067,7 @@ async function startServer() {
       } else if (orders.length > 0) {
         console.log(`Seeding ${orders.length} existing orders to Firestore...`);
         for (const o of orders) {
-          await setDoc(doc(db, "orders", o.id), o);
+          await setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
         }
       }
     } catch (err) {
@@ -1069,7 +1089,7 @@ async function startServer() {
       } else if (consultations.length > 0) {
         console.log(`Seeding ${consultations.length} existing consultations to Firestore...`);
         for (const c of consultations) {
-          await setDoc(doc(db, "consultations", c.id), c);
+          await setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
         }
       }
     } catch (err) {
@@ -1141,7 +1161,7 @@ async function startServer() {
 
         // Save imported product to Firestore
         if (db && targetProduct) {
-          setDoc(doc(db, "products", targetProduct.id), targetProduct).catch((err) => {
+          setDoc(doc(db, "products", targetProduct.id), cleanUndefinedForFirestore(targetProduct)).catch((err) => {
             console.error(`Failed to save imported product ${targetProduct.id} to Firestore:`, err);
           });
         }
@@ -1171,7 +1191,7 @@ async function startServer() {
 
   app.post("/api/admin/products", async (req, res) => {
     try {
-      const { sku, manufacturerCode, name, category, group, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
+      const { sku, manufacturerCode, name, category, group, subcategoryId, subcategoryName, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
       
       if (!sku || !sku.trim()) {
         return res.status(400).json({ success: false, message: "Mã SKU không được trống!" });
@@ -1206,6 +1226,8 @@ async function startServer() {
         name: name.trim(),
         category: category.trim(),
         group: group ? group.trim() : "",
+        subcategoryId: subcategoryId ? String(subcategoryId).trim() : undefined,
+        subcategoryName: subcategoryName ? String(subcategoryName).trim() : undefined,
         price: parsedPrice,
         originalPrice: parsedOriginalPrice,
         discount: parsedDiscount,
@@ -1225,7 +1247,7 @@ async function startServer() {
 
       // Save to Firestore for permanent preservation (non-blocking)
       if (db) {
-        setDoc(doc(db, "products", newProduct.id), newProduct)
+        setDoc(doc(db, "products", newProduct.id), cleanUndefinedForFirestore(newProduct))
           .then(() => console.log(`Background: Successfully persisted single product SKU ${cleanSku} to Firestore.`))
           .catch((fErr) => console.error(`Background Error saving ${newProduct.id} to Firestore:`, fErr));
       }
@@ -1284,7 +1306,7 @@ async function startServer() {
 
     // Save order to Firestore (non-blocking)
     if (db) {
-      setDoc(doc(db, "orders", newOrder.id), newOrder)
+      setDoc(doc(db, "orders", newOrder.id), cleanUndefinedForFirestore(newOrder))
         .then(() => console.log(`Background: Successfully saved order ${newOrder.id} to Firestore.`))
         .catch((fErr) => console.error(`Background Error saving order ${newOrder.id}:`, fErr));
     }
@@ -1388,7 +1410,7 @@ async function startServer() {
 
       // Save to Firestore (non-blocking)
       if (db) {
-        setDoc(doc(db, "consultations", newConsultation.id), newConsultation)
+        setDoc(doc(db, "consultations", newConsultation.id), cleanUndefinedForFirestore(newConsultation))
           .then(() => console.log(`Background: Successfully saved consultation ${newConsultation.id} to Firestore.`))
           .catch((fErr) => console.error(`Background Error saving consultation ${newConsultation.id}:`, fErr));
       }
@@ -1482,7 +1504,7 @@ async function startServer() {
         
         // Save to Firestore (non-blocking)
         if (db) {
-          setDoc(doc(db, "consultations", id), consultations[idx])
+          setDoc(doc(db, "consultations", id), cleanUndefinedForFirestore(consultations[idx]))
             .then(() => console.log(`Background: Successfully updated consultation ${id} status on Firestore.`))
             .catch((fErr) => console.error(`Background Error updating status of consultation ${id}:`, fErr));
         }

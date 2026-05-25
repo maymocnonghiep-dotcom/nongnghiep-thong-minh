@@ -12,6 +12,8 @@ export interface Product {
   name: string;
   category: string;
   group: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
   price: number;
   originalPrice?: number;
   discount?: number;

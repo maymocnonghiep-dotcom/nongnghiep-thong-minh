@@ -15,7 +15,8 @@ import AdminLogin from './components/AdminLogin';
 import PolicyView from './components/PolicyView';
 import ConsultModal from './components/ConsultModal';
 import { Product, CartItem } from './types';
-import { ShieldCheck, Truck, Clock, Headphones, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Truck, Clock, Headphones, ArrowRight, ChevronRight } from 'lucide-react';
+import { mainCategories, subcategoriesMap } from './categoriesData';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -305,19 +306,103 @@ export default function App() {
           return (
             <div className="pt-24 min-h-screen bg-slate-50">
               <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
-                <button 
-                  onClick={() => handleNavigate('home', false)}
-                  className="flex items-center gap-2 text-slate-500 hover:text-brand-primary mb-6 font-bold"
-                >
-                  <ArrowRight size={18} className="rotate-180" /> Quay lại trang chủ
-                </button>
-                <FeaturedProducts 
-                   products={products}
-                   onProductClick={handeProductClick} 
-                   onAddToCart={handleAddToCart}
-                   categoryFilter={group}
-                   initialSubcategory={subcat}
-                />
+                {/* Elegant Breadcrumbs */}
+                <div className="text-sm text-slate-500 mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                  <div className="flex items-center gap-1.5 flex-wrap font-medium">
+                    <span 
+                      className="hover:text-brand-primary cursor-pointer transition-colors"
+                      onClick={() => handleNavigate('home')}
+                    >
+                      Trang chủ
+                    </span>
+                    <ChevronRight size={14} className="text-slate-300" />
+                    <span 
+                      className="text-brand-primary font-semibold"
+                    >
+                      {group}
+                    </span>
+                  </div>
+                  
+                  <button 
+                    onClick={() => handleNavigate('home', false)}
+                    className="flex items-center gap-2 text-slate-500 hover:text-brand-primary transition-colors font-bold text-sm"
+                  >
+                    <ArrowRight size={18} className="rotate-180" /> Quay lại trang chủ
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+                  {/* Left Sidebar - Dynamic Category Tree */}
+                  <div className="lg:col-span-1 border-r border-slate-100 lg:pr-8">
+                    <div className="sticky top-28 bg-slate-50/50 lg:bg-transparent p-5 lg:p-0 rounded-2xl border border-slate-100 lg:border-0">
+                      <div className="mb-6">
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest font-sans">
+                          Danh mục sản phẩm
+                        </h3>
+                        <div className="h-[3px] w-12 bg-brand-primary mt-2" />
+                      </div>
+
+                      <ul className="space-y-1 text-sm font-sans">
+                        {mainCategories.map((cat) => {
+                          const isCurrentGroup = cat === group;
+                          return (
+                            <li key={cat}>
+                              <button
+                                onClick={() => handleNavigate(`category-${cat}`)}
+                                className={`w-full text-left py-2.5 px-3 rounded-xl transition-all flex items-center justify-between group cursor-pointer ${
+                                  isCurrentGroup 
+                                    ? 'font-bold text-brand-primary bg-white shadow-sm border border-slate-200/50' 
+                                    : 'text-slate-600 hover:text-brand-primary hover:bg-white/50'
+                                }`}
+                              >
+                                <span className="truncate flex items-center gap-2">
+                                  {isCurrentGroup && <span className="w-1.5 h-1.5 rounded-full bg-brand-primary shrink-0 animate-pulse" />}
+                                  {cat}
+                                </span>
+                              </button>
+
+                              {/* Dynamic Expandable subcategories for the active group */}
+                              {isCurrentGroup && subcategoriesMap[cat] && (
+                                <ul className="pl-4 py-1.5 border-l border-slate-200 ml-3 flex flex-col gap-1 mt-1">
+                                  {subcategoriesMap[cat].map((subitem) => {
+                                    const isCurrentSub = subcat === subitem.id;
+                                    const navigateView = `category-${cat}::${subitem.id}`;
+
+                                    return (
+                                      <li key={subitem.id}>
+                                        <button
+                                          onClick={() => handleNavigate(navigateView)}
+                                          className={`w-full text-left py-1.5 px-3 text-xs rounded-lg transition-all truncate cursor-pointer ${
+                                            isCurrentSub
+                                              ? 'text-brand-primary font-black bg-brand-primary/5 border-l-[3px] border-brand-primary pl-2'
+                                              : 'text-slate-500 hover:text-brand-primary hover:bg-slate-50/40 pl-2'
+                                          }`}
+                                        >
+                                          {subitem.name}
+                                        </button>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Right Area - Product Grid */}
+                  <div className="lg:col-span-3">
+                    <FeaturedProducts 
+                       products={products}
+                       onProductClick={handeProductClick} 
+                       onAddToCart={handleAddToCart}
+                       categoryFilter={group}
+                       initialSubcategory={subcat}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           );

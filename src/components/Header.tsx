@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { Product } from '../types';
 import { getHighResImageUrl } from '../utils';
+import { subcategoriesMap } from '../categoriesData';
 import Link from './Link';
 
 interface HeaderProps {
@@ -326,19 +327,13 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                             </button>
                           </div>
 
-                          {activeCategory === 'Camera An Ninh' ? (
+                          {subcategoriesMap[activeCategory] ? (
                             <div className="grid grid-cols-2 gap-3">
-                              {[
-                                { id: 'imou', name: 'Camera IMOU' },
-                                { id: 'ezviz', name: 'Camera EZVIZ' },
-                                { id: 'yoosee', name: 'Camera Yoosee' },
-                                { id: 'solar', name: 'Camera Năng Lượng Mặt Trời' },
-                                { id: '4g', name: 'Camera 4G' }
-                              ].map(sub => (
+                              {subcategoriesMap[activeCategory].map(sub => (
                                 <button
                                   key={sub.id}
                                   onClick={() => {
-                                    onNavigate(`category-Camera An Ninh::${sub.id}`);
+                                    onNavigate(`category-${activeCategory}::${sub.id}`);
                                     setIsDropdownOpen(false);
                                   }}
                                   className="w-full flex items-center p-3.5 rounded-2xl bg-slate-50 hover:bg-brand-primary/10 text-slate-700 hover:text-brand-primary border border-slate-100/50 hover:border-brand-primary/25 transition-all text-left font-bold text-xs uppercase tracking-wide cursor-pointer text-ellipsis overflow-hidden whitespace-nowrap"
@@ -468,19 +463,13 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                             >
                               {cat.name}
                             </button>
-                            {cat.name === 'Camera An Ninh' && (
-                              <ul className="pl-4 space-y-1 font-medium border-l border-slate-100">
-                                {[
-                                  { id: 'imou', name: 'Camera IMOU' },
-                                  { id: 'ezviz', name: 'Camera EZVIZ' },
-                                  { id: 'yoosee', name: 'Camera Yoosee' },
-                                  { id: 'solar', name: 'Camera Năng Lượng Mặt Trời' },
-                                  { id: '4g', name: 'Camera 4G' }
-                                ].map(sub => (
+                            {subcategoriesMap[cat.name] && (
+                              <ul className="pl-4 space-y-1 font-medium border-l border-slate-100 mt-1">
+                                {subcategoriesMap[cat.name].map(sub => (
                                   <li key={sub.id}>
                                     <button
                                       onClick={() => {
-                                        onNavigate(`category-Camera An Ninh::${sub.id}`);
+                                        onNavigate(`category-${cat.name}::${sub.id}`);
                                         setIsMenuOpen(false);
                                       }}
                                       className="text-slate-500 text-xs py-1 text-left block hover:text-brand-primary"
