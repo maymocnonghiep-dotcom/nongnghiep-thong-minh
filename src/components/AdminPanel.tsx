@@ -787,7 +787,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                         placeholder="Ví dụ: SPK-5201, 89352..."
                         className="w-full text-slate-800 bg-slate-50/50 border border-slate-200 focus:border-brand-primary focus:bg-white rounded-xl px-4 py-3 font-medium transition-all"
                       />
-                      <span className="text-[10px] text-emerald-600 block italic font-bold">🔎 Chú/Bác có thể dùng mã này hoặc SKU để tìm kiếm song song.</span>
+                      <span className="text-[10px] text-emerald-600 block italic font-bold">🔎 Bạn có thể dùng mã này hoặc SKU để tìm kiếm song song.</span>
                     </div>
 
                     <div className="space-y-1.5">
@@ -849,7 +849,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           >
                             <div className="p-2 flex-1 overflow-y-auto max-h-52">
                               <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
-                                Danh sách nhóm có sẵn (Chú/Bác bấm chọn nhanh)
+                                Danh sách nhóm có sẵn (Bạn bấm chọn nhanh)
                               </div>
                               {categories
                                 .filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "")
@@ -1009,7 +1009,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           </div>
                         </div>
                         <div className="space-y-1.55">
-                          <span className="text-xs text-slate-500 font-bold">Cách 2: Tải lên từ máy tính của Chú/Bác (Chọn nhiều ảnh được)</span>
+                          <span className="text-xs text-slate-500 font-bold">Cách 2: Tải lên từ máy tính của bạn (Chọn nhiều ảnh được)</span>
                           <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 hover:border-brand-primary bg-white hover:bg-slate-50 rounded-xl py-3 px-4 cursor-pointer transition-all">
                             <Upload size={16} className="text-slate-400" />
                             <span className="text-xs text-slate-600 font-bold">Chọn các ảnh thiết bị...</span>
