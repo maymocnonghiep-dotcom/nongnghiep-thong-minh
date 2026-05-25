@@ -24,19 +24,41 @@ export default function Footer({ onAdminClick }: FooterProps) {
         todayVisits = 356;
       }
 
+      // Check if this specific browser has already visited today
+      const uniqueDayKey = 'has_visited_on_' + todayStr;
+      const alreadyVisitedToday = localStorage.getItem(uniqueDayKey) === 'true';
+
       if (storedDate !== todayStr) {
-        // New day: set a randomized realistic daily baseline starting between 150-300
-        todayVisits = Math.floor(Math.random() * 150) + 150;
+        // New day: set a randomized realistic daily baseline starting between 150-250
+        todayVisits = Math.floor(Math.random() * 100) + 150;
         localStorage.setItem('visit_date', todayStr);
         localStorage.setItem('today_visits', String(todayVisits));
         
-        // Let's also increment the overall total by a randomized small offset to look organic
-        totalVisits += 3;
-      } else {
-        // Same day, increment both visitor counts
+        // Mark as visited today
+        localStorage.setItem(uniqueDayKey, 'true');
+        
+        // Increment overall total
         totalVisits += 1;
-        todayVisits += 1;
-        localStorage.setItem('today_visits', String(todayVisits));
+
+        // Clean up previous days' unique keys to persist only clean storage
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('has_visited_on_') && key !== uniqueDayKey) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(k => localStorage.removeItem(k));
+        } catch (err) {}
+      } else {
+        // Same day, check if this browser is new
+        if (!alreadyVisitedToday) {
+          totalVisits += 1;
+          todayVisits += 1;
+          localStorage.setItem('today_visits', String(todayVisits));
+          localStorage.setItem(uniqueDayKey, 'true');
+        }
       }
 
       localStorage.setItem('total_visits', String(totalVisits));
