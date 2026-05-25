@@ -638,7 +638,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 not-italic font-sans">
-                    <Database size={24} className="text-brand-primary" /> Yêu cầu tư vấn thiết kế vườn của Chú/Bác
+                    <Database size={24} className="text-brand-primary" /> Yêu cầu tư vấn thiết kế vườn của Khách hàng
                   </h2>
                   <button 
                     onClick={fetchConsultations}
@@ -658,7 +658,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100">
                     <Database size={48} className="mx-auto text-slate-200 mb-4" />
                     <p className="text-slate-500 font-bold font-sans">Chưa có yêu cầu tư vấn nào</p>
-                    <p className="text-slate-400 text-sm">Thông tin các Chú/Bác đăng ký tư vấn sẽ xuất hiện ở đây.</p>
+                    <p className="text-slate-400 text-sm">Thông tin các khách hàng đăng ký tư vấn sẽ xuất hiện ở đây.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto rounded-2xl border border-slate-100">
@@ -666,7 +666,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-100">
                           <th className="p-4 text-xs font-bold text-slate-500 uppercase">Mã yêu cầu</th>
-                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Chú/Bác</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase">Khách hàng</th>
                           <th className="p-4 text-xs font-bold text-slate-500 uppercase">Địa chỉ</th>
                           <th className="p-4 text-xs font-bold text-slate-500 uppercase">Khu vườn (DT/Mô hình)</th>
                           <th className="p-4 text-xs font-bold text-slate-500 uppercase">Ngày đăng ký</th>
@@ -839,7 +839,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
                       {/* Hover / Focused Dropdown of groups */}
                       <AnimatePresence>
-                        {isDropdownOpen && categories.length > 0 && (
+                        {isDropdownOpen && (
                           <motion.div 
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -851,33 +851,39 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                               <div className="text-[10px] font-bold text-slate-400 px-3 py-1 mb-1 border-b border-slate-100 uppercase tracking-widest">
                                 Danh sách nhóm có sẵn (Bạn bấm chọn nhanh)
                               </div>
-                              {categories
-                                .filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "")
-                                .map((cat, idx) => {
-                                  const isSelected = selectedCategory === cat;
-                                  return (
-                                    <button
-                                      type="button"
-                                      key={idx}
-                                      onClick={() => {
-                                        setSelectedCategory(cat);
-                                        setIsDropdownOpen(false);
-                                      }}
-                                      className={`w-full text-left font-bold text-xs px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between my-0.5 ${
-                                        isSelected 
-                                          ? 'bg-brand-primary text-white shadow-sm' 
-                                          : 'text-slate-700 hover:text-white hover:bg-brand-primary/95 bg-transparent'
-                                      }`}
-                                    >
-                                      <span>{cat}</span>
-                                      {isSelected ? (
-                                        <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-black">✓ Đang chọn</span>
-                                      ) : (
-                                        <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-brand-secondary">Sẵn có</span>
-                                      )}
-                                    </button>
-                                  );
-                                })}
+                              {categories.filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "").length > 0 ? (
+                                categories
+                                  .filter(cat => cat !== "Danh mục sản phẩm" && cat.trim() !== "")
+                                  .map((cat, idx) => {
+                                    const isSelected = selectedCategory === cat;
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={idx}
+                                        onClick={() => {
+                                          setSelectedCategory(cat);
+                                          setIsDropdownOpen(false);
+                                        }}
+                                        className={`w-full text-left font-bold text-xs px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between my-0.5 ${
+                                          isSelected 
+                                            ? 'bg-brand-primary text-white shadow-sm' 
+                                            : 'text-slate-700 hover:text-white hover:bg-brand-primary/95 bg-transparent'
+                                        }`}
+                                      >
+                                        <span>{cat}</span>
+                                        {isSelected ? (
+                                          <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-black font-sans">✓ Đang chọn</span>
+                                        ) : (
+                                          <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Sẵn có</span>
+                                        )}
+                                      </button>
+                                    );
+                                  })
+                              ) : (
+                                <div className="p-3 text-xs text-slate-400 italic">
+                                  Đang tải danh sách nhóm hoặc chưa có nhóm nào...
+                                </div>
+                              )}
                             </div>
 
                             {/* Creating a brand new custom category */}
