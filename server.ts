@@ -992,6 +992,19 @@ const PORT = 3000;
     return obj;
   }
 
+  function saveLocalBackupSafely(filePath: string, content: string) {
+    if (process.env.VERCEL === "1") {
+      // Running inside Vercel serverless function environment where local FS is read-only.
+      // We skip local backups cleanly without throwing errors, keeping state in memory/Firestore.
+      return;
+    }
+    try {
+      fs.writeFileSync(filePath, content, "utf-8");
+    } catch (err) {
+      console.warn(`[Read-Only FS Warning] Skipping disk write for ${path.basename(filePath)}:`, err);
+    }
+  }
+
   const configPath = path.join(process.cwd(), "firebase-applet-config.json");
   let db: any = null;
 
@@ -1037,14 +1050,15 @@ const PORT = 3000;
       if (firestoreProducts.length > 0) {
         activeProducts = firestoreProducts;
         console.log(`Synced products from Firestore: Loaded ${activeProducts.length} items.`);
-        // Write backup to disk
-        fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
+        // Write backup to disk safely
+        saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
       } else {
-        console.log("Firestore 'products' collection is empty. Seeding with current list...");
-        for (const item of activeProducts) {
+        console.log("Firestore 'products' collection is empty. Seeding with current list in parallel...");
+        const seedPromises = activeProducts.map((item) => {
           const itemDocRef = doc(db, "products", String(item.id || item.sku));
-          await setDoc(itemDocRef, cleanUndefinedForFirestore(item));
-        }
+          return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
+        });
+        await Promise.all(seedPromises);
         console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
       }
     } catch (err) {
@@ -1063,12 +1077,13 @@ const PORT = 3000;
       if (firestoreOrders.length > 0) {
         orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         console.log(`Synced ${orders.length} orders from Firestore.`);
-        fs.writeFileSync(ordersDbPath, JSON.stringify(orders, null, 2), "utf-8");
+        saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
       } else if (orders.length > 0) {
-        console.log(`Seeding ${orders.length} existing orders to Firestore...`);
-        for (const o of orders) {
-          await setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
-        }
+        console.log(`Seeding ${orders.length} existing orders to Firestore in parallel...`);
+        const seedPromises = orders.map((o) => {
+          return setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
+        });
+        await Promise.all(seedPromises);
       }
     } catch (err) {
       console.error("Error syncing orders from Firestore:", err);
@@ -1085,12 +1100,13 @@ const PORT = 3000;
       if (firestoreConsultations.length > 0) {
         consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         console.log(`Synced ${consultations.length} consultations from Firestore.`);
-        fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+        saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
       } else if (consultations.length > 0) {
-        console.log(`Seeding ${consultations.length} existing consultations to Firestore...`);
-        for (const c of consultations) {
-          await setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
-        }
+        console.log(`Seeding ${consultations.length} existing consultations to Firestore in parallel...`);
+        const seedPromises = consultations.map((c) => {
+          return setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
+        });
+        await Promise.all(seedPromises);
       }
     } catch (err) {
       console.error("Error syncing consultations from Firestore:", err);
@@ -1187,13 +1203,8 @@ const PORT = 3000;
         }
       });
 
-      // Save imported products to persistent disk file
-      try {
-        fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
-        console.log(`Saved updated list of ${activeProducts.length} products to products_db.json`);
-      } catch (writeErr) {
-        console.error("Failed to write updated products list to products_db.json:", writeErr);
-      }
+      // Save imported products to persistent disk file safely
+      saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
 
       res.json({
         success: true,
@@ -1272,13 +1283,8 @@ const PORT = 3000;
           .catch((fErr) => console.error(`Background Error saving ${newProduct.id} to Firestore:`, fErr));
       }
 
-      // Save to server DB file
-      try {
-        fs.writeFileSync(dbPath, JSON.stringify(activeProducts, null, 2), "utf-8");
-        console.log(`Successfully persisted single product SKU ${cleanSku}. Total: ${activeProducts.length}`);
-      } catch (writeErr) {
-        console.error("Failed to write single product to products_db.json:", writeErr);
-      }
+      // Save to server DB file safely
+      saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
 
       res.json({
         success: true,
@@ -1331,12 +1337,8 @@ const PORT = 3000;
         .catch((fErr) => console.error(`Background Error saving order ${newOrder.id}:`, fErr));
     }
 
-    // Save orders to db backup
-    try {
-      fs.writeFileSync(ordersDbPath, JSON.stringify(orders, null, 2), "utf-8");
-    } catch (saveErr) {
-      console.error("Failed to save orders to disk:", saveErr);
-    }
+    // Save orders to db backup safely
+    saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
     
     // In a real application, you would use a service like SendGrid, Mailgun, or AWS SES
     // For this environment, we will use nodemailer if configured, otherwise fallback to logging.
@@ -1435,12 +1437,8 @@ const PORT = 3000;
           .catch((fErr) => console.error(`Background Error saving consultation ${newConsultation.id}:`, fErr));
       }
 
-      // Persist list backup
-      try {
-        fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
-      } catch (fWriteErr) {
-        console.warn("Could not write consultations file locally (read-only FS):", fWriteErr);
-      }
+      // Persist list backup safely
+      saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
 
       const emailBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #f8fafc;">
@@ -1533,11 +1531,7 @@ const PORT = 3000;
             .catch((fErr) => console.error(`Background Error updating status of consultation ${id}:`, fErr));
         }
 
-        try {
-          fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
-        } catch (fWriteErr) {
-          console.warn("Could not save consultation status update locally (read-only FS):", fWriteErr);
-        }
+        saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
         return res.json({ success: true, consultation: consultations[idx] });
       }
       res.status(404).json({ success: false, message: "Yêu cầu tư vấn không tồn tại." });
@@ -1605,11 +1599,7 @@ const PORT = 3000;
       visitorStats.today = 0;
       visitorStats.lastDate = todayStr;
       
-      try {
-        fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
-      } catch (fWriteErr) {
-        console.warn("Could not save initial visitor stats file locally (read-only FS):", fWriteErr);
-      }
+      saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
 
       if (db) {
         try {
@@ -1630,11 +1620,7 @@ const PORT = 3000;
       if (visitorStats.lastDate !== todayStr) {
         visitorStats.today = 0;
         visitorStats.lastDate = todayStr;
-        try {
-          fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
-        } catch (fWriteErr) {
-          console.warn("Could not sync visitor stats file locally (read-only FS):", fWriteErr);
-        }
+        saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
         if (db) {
           await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
         }
@@ -1657,11 +1643,7 @@ const PORT = 3000;
       visitorStats.today += 1;
       visitorStats.total += 1;
 
-      try {
-        fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
-      } catch (fWriteErr) {
-        console.warn("Could not write visitor tick file locally (read-only FS):", fWriteErr);
-      }
+      saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
 
       if (db) {
         setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats))
