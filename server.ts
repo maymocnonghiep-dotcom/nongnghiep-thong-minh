@@ -1023,10 +1023,26 @@ const PORT = 3000;
 
   const configPath = path.join(process.cwd(), "firebase-applet-config.json");
   let db: any = null;
+  let firebaseConfig: any = null;
 
-  if (fs.existsSync(configPath)) {
+  if (process.env.FIREBASE_CONFIG) {
     try {
-      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+      console.log("SUCCESS: Firebase configuration detected in FIREBASE_CONFIG environment variable.");
+    } catch (err) {
+      console.error("CRITICAL: Failed to parse FIREBASE_CONFIG environment variable:", err);
+    }
+  } else if (fs.existsSync(configPath)) {
+    try {
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      console.log("SUCCESS: Firebase configuration loaded from local firebase-applet-config.json.");
+    } catch (err) {
+      console.error("CRITICAL: Failed to load local firebase-applet-config.json:", err);
+    }
+  }
+
+  if (firebaseConfig) {
+    try {
       const firebaseApp = initializeApp(firebaseConfig);
       db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
       console.log("SUCCESS: Firebase initialized. Proactively fetching data from Firestore...");
