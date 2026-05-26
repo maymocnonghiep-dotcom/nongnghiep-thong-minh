@@ -1054,8 +1054,8 @@ const PORT = 3000;
   if (firebaseConfig) {
     try {
       const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-      db = initializeFirestore(firebaseApp, { experimentalAutoDetectLongPolling: true }, firebaseConfig.firestoreDatabaseId);
-      console.log("SUCCESS: Firebase initialized with long-polling. Proactively fetching data from Firestore...");
+      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+      console.log("SUCCESS: Firebase initialized. Proactively fetching data from Firestore...");
     } catch (err) {
       console.error("CRITICAL: Failed to initialize Firebase:", err);
     }
@@ -1301,10 +1301,15 @@ const PORT = 3000;
 
   // API Routes
   app.get("/api/products", async (req, res) => {
-    if (!productsLoaded) {
-      await ensureProductsLoaded();
+    try {
+      if (!productsLoaded) {
+        await ensureProductsLoaded();
+      }
+      res.json(activeProducts);
+    } catch (err: any) {
+      console.error("Error in GET /api/products:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
-    res.json(activeProducts);
   });
 
   app.post("/api/admin/products/import", async (req, res) => {
@@ -1483,28 +1488,38 @@ const PORT = 3000;
   });
 
   app.get("/api/categories", async (req, res) => {
-    if (!productsLoaded) {
-      await ensureProductsLoaded();
+    try {
+      if (!productsLoaded) {
+        await ensureProductsLoaded();
+      }
+      const categoriesFromGroups = [...new Set(activeProducts.map(p => p.group).filter(Boolean))];
+      const defaultCategoriesList = [
+        "Thiết bị tưới",
+        "Đồ điện",
+        "Camera An Ninh",
+        "Vật tư nước",
+        "Dụng cụ làm vườn",
+        "Đèn năng lượng mặt trời"
+      ];
+      const mergedList = Array.from(new Set([...categoriesFromGroups, ...defaultCategoriesList]));
+      res.json(mergedList);
+    } catch (err: any) {
+      console.error("Error in GET /api/categories:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
-    const categoriesFromGroups = [...new Set(activeProducts.map(p => p.group).filter(Boolean))];
-    const defaultCategoriesList = [
-      "Thiết bị tưới",
-      "Đồ điện",
-      "Camera An Ninh",
-      "Vật tư nước",
-      "Dụng cụ làm vườn",
-      "Đèn năng lượng mặt trời"
-    ];
-    const mergedList = Array.from(new Set([...categoriesFromGroups, ...defaultCategoriesList]));
-    res.json(mergedList);
   });
 
   app.get("/api/admin/orders", async (req, res) => {
-    // In a real app, check for admin auth header or session
-    if (!ordersLoaded) {
-      await ensureOrdersLoaded();
+    try {
+      // In a real app, check for admin auth header or session
+      if (!ordersLoaded) {
+        await ensureOrdersLoaded();
+      }
+      res.json(orders);
+    } catch (err: any) {
+      console.error("Error in GET /api/admin/orders:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
-    res.json(orders);
   });
 
   app.post("/api/orders", async (req, res) => {
@@ -1724,10 +1739,15 @@ const PORT = 3000;
   });
 
   app.get("/api/admin/consultations", async (req, res) => {
-    if (!consultationsLoaded) {
-      await ensureConsultationsLoaded();
+    try {
+      if (!consultationsLoaded) {
+        await ensureConsultationsLoaded();
+      }
+      res.json(consultations);
+    } catch (err: any) {
+      console.error("Error in GET /api/admin/consultations:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
-    res.json(consultations);
   });
 
   app.put("/api/admin/consultations/:id", async (req, res) => {
