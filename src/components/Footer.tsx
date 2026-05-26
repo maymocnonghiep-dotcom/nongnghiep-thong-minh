@@ -9,12 +9,52 @@ interface FooterProps {
 export default function Footer({ onAdminClick }: FooterProps) {
   const [visitorStats, setVisitorStats] = useState({ total: 12480, today: 150 });
 
+  // Safe localStorage utility to prevent fatal browser SecurityErrors in iframes
+  const safeLocalStorage = {
+    getItem: (key: string): string | null => {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        return (window as any).__v_fallback_local?.[key] || null;
+      }
+    },
+    setItem: (key: string, value: string): void => {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        if (!(window as any).__v_fallback_local) {
+          (window as any).__v_fallback_local = {};
+        }
+        (window as any).__v_fallback_local[key] = value;
+      }
+    }
+  };
+
+  // Safe sessionStorage utility to prevent fatal browser SecurityErrors in iframes
+  const safeSessionStorage = {
+    getItem: (key: string): string | null => {
+      try {
+        return sessionStorage.getItem(key);
+      } catch (e) {
+        return (window as any).__v_fallback_session?.[key] || null;
+      }
+    },
+    setItem: (key: string, value: string): void => {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch (e) {
+        if (!(window as any).__v_fallback_session) {
+          (window as any).__v_fallback_session = {};
+        }
+        (window as any).__v_fallback_session[key] = value;
+      }
+    }
+  };
+
   useEffect(() => {
     // 1. Interaction tracker: updates last activity timestamp when user interacts
     const updateActivityTimestamp = () => {
-      try {
-        localStorage.setItem('visitor_last_activity', String(Date.now()));
-      } catch (e) {}
+      safeLocalStorage.setItem('visitor_last_activity', String(Date.now()));
     };
 
     let lastInteractionTime = 0;
@@ -45,22 +85,20 @@ export default function Footer({ onAdminClick }: FooterProps) {
 
   useEffect(() => {
     // Load local storage cache as the initial display fallback
-    try {
-      const cacheToday = localStorage.getItem('cached_today_visits');
-      const cacheTotal = localStorage.getItem('cached_total_visits');
-      if (cacheToday && cacheTotal) {
-        setVisitorStats({
-          today: Number(cacheToday),
-          total: Number(cacheTotal)
-        });
-      }
-    } catch (e) {}
+    const cacheToday = safeLocalStorage.getItem('cached_today_visits');
+    const cacheTotal = safeLocalStorage.getItem('cached_total_visits');
+    if (cacheToday && cacheTotal) {
+      setVisitorStats({
+        today: Number(cacheToday),
+        total: Number(cacheTotal)
+      });
+    }
 
     const handleVisitorTracking = async () => {
       try {
         const now = Date.now();
-        const isSessionActive = sessionStorage.getItem('visitor_session_active') === 'true';
-        const lastActivityStr = localStorage.getItem('visitor_last_activity');
+        const isSessionActive = safeSessionStorage.getItem('visitor_session_active') === 'true';
+        const lastActivityStr = safeLocalStorage.getItem('visitor_last_activity');
         const lastActivity = lastActivityStr ? Number(lastActivityStr) : 0;
 
         // Condition for new hit: 
@@ -75,11 +113,11 @@ export default function Footer({ onAdminClick }: FooterProps) {
             const data = await res.json();
             if (data && typeof data.today === 'number' && typeof data.total === 'number') {
               setVisitorStats({ today: data.today, total: data.total });
-              localStorage.setItem('cached_today_visits', String(data.today));
-              localStorage.setItem('cached_total_visits', String(data.total));
+              safeLocalStorage.setItem('cached_today_visits', String(data.today));
+              safeLocalStorage.setItem('cached_total_visits', String(data.total));
             }
           }
-          sessionStorage.setItem('visitor_session_active', 'true');
+          safeSessionStorage.setItem('visitor_session_active', 'true');
         } else {
           // Already active session without timeout: just pull the latest live counts
           const res = await fetch('/api/visitor-stats');
@@ -87,8 +125,8 @@ export default function Footer({ onAdminClick }: FooterProps) {
             const data = await res.json();
             if (data && typeof data.today === 'number' && typeof data.total === 'number') {
               setVisitorStats({ today: data.today, total: data.total });
-              localStorage.setItem('cached_today_visits', String(data.today));
-              localStorage.setItem('cached_total_visits', String(data.total));
+              safeLocalStorage.setItem('cached_today_visits', String(data.today));
+              safeLocalStorage.setItem('cached_total_visits', String(data.total));
             }
           }
         }

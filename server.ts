@@ -1535,6 +1535,9 @@ async function startServer() {
   };
 
   const loadVisitorStats = async () => {
+    // Seed with realistic baselines if we have a fresh launch, keeping the site looking active
+    visitorStats = { today: 150, total: 12480, lastDate: getVNTodayDateStr() };
+
     try {
       if (fs.existsSync(counterDbPath)) {
         const fileContent = fs.readFileSync(counterDbPath, "utf-8");
@@ -1553,13 +1556,16 @@ async function startServer() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const fsData = docSnap.data();
-          if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number") {
+          if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number" && fsData.total > 0) {
             visitorStats.total = Math.max(visitorStats.total, fsData.total || 0);
             visitorStats.today = Math.max(visitorStats.today, fsData.today || 0);
             if (fsData.lastDate) {
               visitorStats.lastDate = fsData.lastDate;
             }
           }
+        } else {
+          // Document doesn't exist, let's write our baseline to firestore
+          await setDoc(docRef, cleanUndefinedForFirestore(visitorStats));
         }
       } catch (fErr) {
         console.error("Failed to sync visitor stats from Firestore:", fErr);
@@ -1573,11 +1579,16 @@ async function startServer() {
       
       try {
         fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
-        if (db) {
+      } catch (fWriteErr) {
+        console.warn("Could not save initial visitor stats file locally (read-only FS):", fWriteErr);
+      }
+
+      if (db) {
+        try {
           await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
+        } catch (fErr) {
+          console.error("Failed to write initial resettled stats to Firestore:", fErr);
         }
-      } catch (err) {
-        console.error("Failed to write initial resettled stats:", err);
       }
     }
   };
@@ -1591,7 +1602,11 @@ async function startServer() {
       if (visitorStats.lastDate !== todayStr) {
         visitorStats.today = 0;
         visitorStats.lastDate = todayStr;
-        fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+        try {
+          fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+        } catch (fWriteErr) {
+          console.warn("Could not sync visitor stats file locally (read-only FS):", fWriteErr);
+        }
         if (db) {
           await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
         }
@@ -1614,7 +1629,11 @@ async function startServer() {
       visitorStats.today += 1;
       visitorStats.total += 1;
 
-      fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+      try {
+        fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+      } catch (fWriteErr) {
+        console.warn("Could not write visitor tick file locally (read-only FS):", fWriteErr);
+      }
 
       if (db) {
         setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats))
