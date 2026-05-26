@@ -3,7 +3,7 @@ import path from "path";
 import cors from "cors";
 import nodemailer from "nodemailer";
 import fs from "fs";
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
 
 
@@ -1043,11 +1043,119 @@ const PORT = 3000;
 
   if (firebaseConfig) {
     try {
-      const firebaseApp = initializeApp(firebaseConfig);
+      const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
       console.log("SUCCESS: Firebase initialized. Proactively fetching data from Firestore...");
     } catch (err) {
       console.error("CRITICAL: Failed to initialize Firebase:", err);
+    }
+  }
+
+  // --- On-Demand Lazy Database Sync Tracking ---
+  let productsLoaded = false;
+  let ordersLoaded = false;
+  let consultationsLoaded = false;
+  let visitorStatsLoaded = false;
+
+  async function ensureProductsLoaded() {
+    if (!db) {
+      productsLoaded = true; // Mark True to avoid infinite retries
+      return;
+    }
+    if (productsLoaded) return;
+    try {
+      console.log("On-demand: Fetching products from Firestore...");
+      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 4000, null);
+      if (querySnapshot) {
+        const firestoreProducts: any[] = [];
+        querySnapshot.forEach((d) => {
+          firestoreProducts.push(d.data());
+        });
+        if (firestoreProducts.length > 0) {
+          activeProducts = firestoreProducts;
+          console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
+        }
+      }
+      productsLoaded = true;
+    } catch (err) {
+      console.error("On-demand product fetch failed:", err);
+    }
+  }
+
+  async function ensureOrdersLoaded() {
+    if (!db) {
+      ordersLoaded = true;
+      return;
+    }
+    if (ordersLoaded) return;
+    try {
+      console.log("On-demand: Fetching orders from Firestore...");
+      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 4000, null);
+      if (querySnapshot) {
+        const firestoreOrders: any[] = [];
+        querySnapshot.forEach((d) => {
+          firestoreOrders.push(d.data());
+        });
+        if (firestoreOrders.length > 0) {
+          orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          console.log(`On-demand loaded ${orders.length} orders from Firestore.`);
+        }
+      }
+      ordersLoaded = true;
+    } catch (err) {
+      console.error("On-demand orders fetch failed:", err);
+    }
+  }
+
+  async function ensureConsultationsLoaded() {
+    if (!db) {
+      consultationsLoaded = true;
+      return;
+    }
+    if (consultationsLoaded) return;
+    try {
+      console.log("On-demand: Fetching consultations from Firestore...");
+      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 4000, null);
+      if (querySnapshot) {
+        const firestoreConsultations: any[] = [];
+        querySnapshot.forEach((d) => {
+          firestoreConsultations.push(d.data());
+        });
+        if (firestoreConsultations.length > 0) {
+          consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          console.log(`On-demand loaded ${consultations.length} consultations from Firestore.`);
+        }
+      }
+      consultationsLoaded = true;
+    } catch (err) {
+      console.error("On-demand consultations fetch failed:", err);
+    }
+  }
+
+  async function ensureVisitorStatsLoaded() {
+    if (!db) {
+      visitorStatsLoaded = true;
+      return;
+    }
+    if (visitorStatsLoaded) return;
+    try {
+      console.log("On-demand: Fetching visitor stats from Firestore...");
+      const docRef = doc(db, "counters", "visitor_counter");
+      const docSnap = await withTimeout(getDoc(docRef), 3000, null);
+      if (docSnap && docSnap.exists()) {
+        const fsData = docSnap.data();
+        if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number" && fsData.total > 0) {
+          visitorStats.total = Math.max(visitorStats.total, fsData.total || 0);
+          visitorStats.today = Math.max(visitorStats.today, fsData.today || 0);
+          if (fsData.lastDate) {
+            visitorStats.lastDate = fsData.lastDate;
+          }
+          console.log("On-demand loaded visitor counter stats:", visitorStats);
+        }
+      }
+      visitorStatsLoaded = true;
+    } catch (err) {
+      console.error("On-demand visitor stats fetch failed:", err);
     }
   }
 
@@ -1182,12 +1290,18 @@ const PORT = 3000;
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Routes
-  app.get("/api/products", (req, res) => {
+  app.get("/api/products", async (req, res) => {
+    if (!productsLoaded) {
+      await ensureProductsLoaded();
+    }
     res.json(activeProducts);
   });
 
-  app.post("/api/admin/products/import", (req, res) => {
+  app.post("/api/admin/products/import", async (req, res) => {
     try {
+      if (!productsLoaded) {
+        await ensureProductsLoaded();
+      }
       const importedProducts = req.body;
       if (!Array.isArray(importedProducts)) {
         return res.status(400).json({ success: false, message: "Dữ liệu nhập hàng không đúng định dạng danh sách." });
@@ -1261,6 +1375,9 @@ const PORT = 3000;
 
   app.post("/api/admin/products", async (req, res) => {
     try {
+      if (!productsLoaded) {
+        await ensureProductsLoaded();
+      }
       const { sku, manufacturerCode, name, category, group, subcategoryId, subcategoryName, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
       
       if (!sku || !sku.trim()) {
@@ -1350,12 +1467,18 @@ const PORT = 3000;
     res.json(mergedList);
   });
 
-  app.get("/api/admin/orders", (req, res) => {
+  app.get("/api/admin/orders", async (req, res) => {
     // In a real app, check for admin auth header or session
+    if (!ordersLoaded) {
+      await ensureOrdersLoaded();
+    }
     res.json(orders);
   });
 
   app.post("/api/orders", async (req, res) => {
+    if (!ordersLoaded) {
+      await ensureOrdersLoaded();
+    }
     const { customer, items, total } = req.body;
     
     // Persist order in memory
@@ -1449,6 +1572,9 @@ const PORT = 3000;
   // Consultations API Enpoints
   app.post("/api/consultations", async (req, res) => {
     try {
+      if (!consultationsLoaded) {
+        await ensureConsultationsLoaded();
+      }
       const { fullName, phone, province, district, area, farmModel } = req.body;
       
       if (!fullName || !phone) {
@@ -1551,12 +1677,18 @@ const PORT = 3000;
     }
   });
 
-  app.get("/api/admin/consultations", (req, res) => {
+  app.get("/api/admin/consultations", async (req, res) => {
+    if (!consultationsLoaded) {
+      await ensureConsultationsLoaded();
+    }
     res.json(consultations);
   });
 
   app.put("/api/admin/consultations/:id", async (req, res) => {
     try {
+      if (!consultationsLoaded) {
+        await ensureConsultationsLoaded();
+      }
       const { id } = req.params;
       const { status } = req.body;
       const idx = consultations.findIndex(c => c.id === id);
@@ -1652,11 +1784,16 @@ const PORT = 3000;
     }
   };
 
-  // Run the async counter initializer safely in background
-  loadVisitorStats().catch(err => console.error("Failed to setup visitor counter:", err));
+  // Run the async counter initializer safely in background for non-Vercel environments
+  if (process.env.VERCEL !== "1") {
+    loadVisitorStats().catch(err => console.error("Failed to setup visitor counter:", err));
+  }
 
   app.get("/api/visitor-stats", async (req, res) => {
     try {
+      if (!visitorStatsLoaded) {
+        await ensureVisitorStatsLoaded();
+      }
       const todayStr = getVNTodayDateStr();
       if (visitorStats.lastDate !== todayStr) {
         visitorStats.today = 0;
@@ -1675,6 +1812,9 @@ const PORT = 3000;
 
   app.post("/api/visitor-tick", async (req, res) => {
     try {
+      if (!visitorStatsLoaded) {
+        await ensureVisitorStatsLoaded();
+      }
       const todayStr = getVNTodayDateStr();
       if (visitorStats.lastDate !== todayStr) {
         visitorStats.today = 0;
@@ -1701,14 +1841,16 @@ const PORT = 3000;
   // --- Synchronize and setup in background ---
   const isVercel = process.env.VERCEL === "1";
 
-  // Fire background loaders
-  syncFirestoreAndLocalBackups()
-    .then(() => console.log("Database synced in background."))
-    .catch(err => console.error("Failed to sync database in background:", err));
+  // Fire background loaders ONLY on standard, persistent servers (e.g., VPS, Cloud Run, local development)
+  if (!isVercel) {
+    syncFirestoreAndLocalBackups()
+      .then(() => console.log("Database synced in background."))
+      .catch(err => console.error("Failed to sync database in background:", err));
 
-  loadVisitorStats()
-    .then(() => console.log("Visitor stats loaded in background."))
-    .catch(err => console.error("Failed to setup visitor stats:", err));
+    loadVisitorStats()
+      .then(() => console.log("Visitor stats loaded in background."))
+      .catch(err => console.error("Failed to setup visitor stats:", err));
+  }
 
   // Vite development server middleware setup
   let viteDevServer: any = null;
