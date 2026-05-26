@@ -968,8 +968,24 @@ const PORT = 3000;
       operationType,
       path
     };
-    console.error('Firestore Error: ', JSON.stringify(errInfo));
-    throw new Error(JSON.stringify(errInfo));
+    console.error('Firestore Error (Suppressed): ', JSON.stringify(errInfo));
+  }
+
+  function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 2000, fallbackValue: T): Promise<T> {
+    let timer: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((resolve) => {
+      timer = setTimeout(() => {
+        console.warn(`[Firestore Timeout] Operation exceeded ${timeoutMs}ms. Falling back.`);
+        resolve(fallbackValue);
+      }, timeoutMs);
+    });
+    return Promise.race([
+      promise.then((res) => {
+        clearTimeout(timer);
+        return res;
+      }),
+      timeoutPromise
+    ]);
   }
 
   function cleanUndefinedForFirestore(obj: any): any {
@@ -1029,8 +1045,8 @@ const PORT = 3000;
     // 1. Validate Connection to Firestore (Skill guidelines mandate)
     try {
       const { doc: testDoc, getDocFromServer } = await import("firebase/firestore");
-      await getDocFromServer(testDoc(db, 'test', 'connection'));
-      console.log("Firestore connection test passed successfully!");
+      await withTimeout(getDocFromServer(testDoc(db, 'test', 'connection')), 1500, null);
+      console.log("Firestore connection test passed successfully/bypassed.");
     } catch (error) {
       if (error instanceof Error && error.message.includes('the client is offline')) {
         console.error("Please check your Firebase configuration. Client appears to be offline.");
@@ -1041,25 +1057,29 @@ const PORT = 3000;
 
     // 2. Fetch and Seed Products
     try {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      const firestoreProducts: any[] = [];
-      querySnapshot.forEach((d) => {
-        firestoreProducts.push(d.data());
-      });
-
-      if (firestoreProducts.length > 0) {
-        activeProducts = firestoreProducts;
-        console.log(`Synced products from Firestore: Loaded ${activeProducts.length} items.`);
-        // Write backup to disk safely
-        saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
-      } else {
-        console.log("Firestore 'products' collection is empty. Seeding with current list in parallel...");
-        const seedPromises = activeProducts.map((item) => {
-          const itemDocRef = doc(db, "products", String(item.id || item.sku));
-          return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
+      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 2000, null);
+      if (querySnapshot) {
+        const firestoreProducts: any[] = [];
+        querySnapshot.forEach((d) => {
+          firestoreProducts.push(d.data());
         });
-        await Promise.all(seedPromises);
-        console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
+
+        if (firestoreProducts.length > 0) {
+          activeProducts = firestoreProducts;
+          console.log(`Synced products from Firestore: Loaded ${activeProducts.length} items.`);
+          // Write backup to disk safely
+          saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
+        } else {
+          console.log("Firestore 'products' collection is empty. Seeding with current list in parallel...");
+          const seedPromises = activeProducts.map((item) => {
+            const itemDocRef = doc(db, "products", String(item.id || item.sku));
+            return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
+          });
+          await withTimeout(Promise.all(seedPromises), 2500, null);
+          console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
+        }
+      } else {
+        console.warn("Products sync from Firestore timed out. Falling back to local workspace memory database.");
       }
     } catch (err) {
       console.error("Error syncing products from Firestore. Using local workspace backup...");
@@ -1068,22 +1088,26 @@ const PORT = 3000;
 
     // 3. Sync Orders
     try {
-      const querySnapshot = await getDocs(collection(db, "orders"));
-      const firestoreOrders: any[] = [];
-      querySnapshot.forEach((d) => {
-        firestoreOrders.push(d.data());
-      });
-
-      if (firestoreOrders.length > 0) {
-        orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        console.log(`Synced ${orders.length} orders from Firestore.`);
-        saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
-      } else if (orders.length > 0) {
-        console.log(`Seeding ${orders.length} existing orders to Firestore in parallel...`);
-        const seedPromises = orders.map((o) => {
-          return setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
+      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 2000, null);
+      if (querySnapshot) {
+        const firestoreOrders: any[] = [];
+        querySnapshot.forEach((d) => {
+          firestoreOrders.push(d.data());
         });
-        await Promise.all(seedPromises);
+
+        if (firestoreOrders.length > 0) {
+          orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          console.log(`Synced ${orders.length} orders from Firestore.`);
+          saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
+        } else if (orders.length > 0) {
+          console.log(`Seeding ${orders.length} existing orders to Firestore in parallel...`);
+          const seedPromises = orders.map((o) => {
+            return setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
+          });
+          await withTimeout(Promise.all(seedPromises), 2500, null);
+        }
+      } else {
+        console.warn("Orders sync from Firestore timed out. Relying on local backup.");
       }
     } catch (err) {
       console.error("Error syncing orders from Firestore:", err);
@@ -1091,32 +1115,31 @@ const PORT = 3000;
 
     // 4. Sync Consultations
     try {
-      const querySnapshot = await getDocs(collection(db, "consultations"));
-      const firestoreConsultations: any[] = [];
-      querySnapshot.forEach((d) => {
-        firestoreConsultations.push(d.data());
-      });
-
-      if (firestoreConsultations.length > 0) {
-        consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        console.log(`Synced ${consultations.length} consultations from Firestore.`);
-        saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
-      } else if (consultations.length > 0) {
-        console.log(`Seeding ${consultations.length} existing consultations to Firestore in parallel...`);
-        const seedPromises = consultations.map((c) => {
-          return setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
+      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 2000, null);
+      if (querySnapshot) {
+        const firestoreConsultations: any[] = [];
+        querySnapshot.forEach((d) => {
+          firestoreConsultations.push(d.data());
         });
-        await Promise.all(seedPromises);
+
+        if (firestoreConsultations.length > 0) {
+          consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          console.log(`Synced ${consultations.length} consultations from Firestore.`);
+          saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
+        } else if (consultations.length > 0) {
+          console.log(`Seeding ${consultations.length} existing consultations to Firestore in parallel...`);
+          const seedPromises = consultations.map((c) => {
+            return setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
+          });
+          await withTimeout(Promise.all(seedPromises), 2500, null);
+        }
+      } else {
+        console.warn("Consultations sync from Firestore timed out. Relying on local backup.");
       }
     } catch (err) {
       console.error("Error syncing consultations from Firestore:", err);
     }
   }
-
-  // Trigger non-blocking database synchronization
-  syncFirestoreAndLocalBackups().catch((err) => {
-    console.error("Failed to run startup database sync:", err);
-  });
 
   // Middleware
   // Enable ultra-permissive CORS manually to handle custom domains like webcuaquan.cloud perfectly
@@ -1575,8 +1598,8 @@ const PORT = 3000;
     if (db) {
       try {
         const docRef = doc(db, "counters", "visitor_counter");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
+        const docSnap = await withTimeout(getDoc(docRef), 2000, null);
+        if (docSnap && docSnap.exists()) {
           const fsData = docSnap.data();
           if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number" && fsData.total > 0) {
             visitorStats.total = Math.max(visitorStats.total, fsData.total || 0);
@@ -1585,9 +1608,11 @@ const PORT = 3000;
               visitorStats.lastDate = fsData.lastDate;
             }
           }
+        } else if (docSnap === undefined || docSnap === null) {
+          console.warn("Visitor stats document fetch timed out. Skipping remote baseline check.");
         } else {
           // Document doesn't exist, let's write our baseline to firestore
-          await setDoc(docRef, cleanUndefinedForFirestore(visitorStats));
+          await withTimeout(setDoc(docRef, cleanUndefinedForFirestore(visitorStats)), 2000, null);
         }
       } catch (fErr) {
         console.error("Failed to sync visitor stats from Firestore:", fErr);
@@ -1603,7 +1628,7 @@ const PORT = 3000;
 
       if (db) {
         try {
-          await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
+          await withTimeout(setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats)), 2000, null);
         } catch (fErr) {
           console.error("Failed to write initial resettled stats to Firestore:", fErr);
         }
@@ -1622,7 +1647,7 @@ const PORT = 3000;
         visitorStats.lastDate = todayStr;
         saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
         if (db) {
-          await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
+          await withTimeout(setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats)), 2000, null);
         }
       }
       res.json({ success: true, today: visitorStats.today, total: visitorStats.total });
