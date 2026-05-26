@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
 import { subcategoriesMap } from '../categoriesData';
+import { compressImage } from '../utils';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -217,34 +218,47 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     }
   }, [editSelectedCategory]);
 
-  const handleEditProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        setEditImage(reader.result);
-        setEditImagesList(prev => [...prev, reader.result as string]);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedB64 = await compressImage(file, 800, 800, 0.75);
+      setEditImage(compressedB64);
+      setEditImagesList(prev => [...prev, compressedB64]);
+    } catch (err) {
+      console.error('Lỗi khi nén ảnh chính:', err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setEditImage(reader.result);
+          setEditImagesList(prev => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleEditProductImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditProductImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            setEditImagesList(prev => [...prev, reader.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
+        try {
+          const compressedB64 = await compressImage(file, 800, 800, 0.75);
+          setEditImagesList(prev => [...prev, compressedB64]);
+        } catch (err) {
+          console.error('Lỗi khi nén ảnh phụ:', err);
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              setEditImagesList(prev => [...prev, reader.result as string]);
+            }
+          };
+          reader.readAsDataURL(file);
+        }
       }
     }
   };
@@ -400,8 +414,15 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         body: JSON.stringify(bodyData)
       });
       
-      const data = await res.json();
-      if (data.success) {
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        const text = await res.text();
+        throw new Error(text || `Mã lỗi HTTP: ${res.status}`);
+      }
+
+      if (res.ok && data.success) {
         setEditProductSuccessMsg(data.message || 'Cập nhật thông tin sản phẩm thành công!');
         
         const existingLocalStr = localStorage.getItem('local_products');
@@ -494,34 +515,47 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       .catch(err => console.error('Error fetching categories:', err));
   };
 
-  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        setNewImage(reader.result);
-        setNewImagesList(prev => [...prev, reader.result as string]);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedB64 = await compressImage(file, 800, 800, 0.75);
+      setNewImage(compressedB64);
+      setNewImagesList(prev => [...prev, compressedB64]);
+    } catch (err) {
+      console.error('Lỗi khi nén ảnh chính:', err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setNewImage(reader.result);
+          setNewImagesList(prev => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleProductImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            setNewImagesList(prev => [...prev, reader.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
+        try {
+          const compressedB64 = await compressImage(file, 800, 800, 0.75);
+          setNewImagesList(prev => [...prev, compressedB64]);
+        } catch (err) {
+          console.error('Lỗi khi nén ảnh phụ:', err);
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              setNewImagesList(prev => [...prev, reader.result as string]);
+            }
+          };
+          reader.readAsDataURL(file);
+        }
       }
     }
   };
@@ -639,8 +673,16 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         },
         body: JSON.stringify(bodyData)
       });
-      const data = await res.json();
-      if (data.success) {
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        const text = await res.text();
+        throw new Error(text || `Mã lỗi HTTP: ${res.status}`);
+      }
+
+      if (res.ok && data.success) {
         setProductSuccessMessage(data.message || 'Thêm sản phẩm thành công!');
         onRefreshProducts?.();
         
@@ -664,9 +706,9 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       } else {
         setProductErrorMessage(data.message || 'Có lỗi xảy ra khi lưu sản phẩm.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setProductErrorMessage('Lỗi mạng, kiểm tra lại kết nối!');
+      setProductErrorMessage(err && err.message ? `Lỗi hệ thống: ${err.message}` : 'Lỗi mạng, kiểm tra lại kết nối!');
     } finally {
       setIsAddingProduct(false);
     }

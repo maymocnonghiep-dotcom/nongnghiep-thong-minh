@@ -928,7 +928,7 @@ async function startServer() {
     console.error("Failed to load local consultations backup:", err);
   }
 
-  let activeProducts = [...products];
+  let activeProducts: any[] = [...products];
   try {
     if (fs.existsSync(dbPath)) {
       const dbContent = fs.readFileSync(dbPath, "utf-8");
@@ -1225,7 +1225,7 @@ async function startServer() {
         manufacturerCode: manufacturerCode ? String(manufacturerCode).trim() : undefined,
         name: name.trim(),
         category: category.trim(),
-        group: group ? group.trim() : "",
+        group: group ? String(group).trim() : "",
         subcategoryId: subcategoryId ? String(subcategoryId).trim() : undefined,
         subcategoryName: subcategoryName ? String(subcategoryName).trim() : undefined,
         price: parsedPrice,
@@ -1234,7 +1234,7 @@ async function startServer() {
         image: finalImage,
         images: finalImages,
         description: description || "",
-        unit: unit ? unit.trim() : "Bộ",
+        unit: unit ? String(unit).trim() : "Bộ",
         specs: specs || {},
         reviews: idx !== -1 ? (activeProducts[idx].reviews || []) : []
       };

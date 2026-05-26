@@ -68,3 +68,66 @@ export function getHighResImageUrl(url: string | undefined | null): string {
 
   return optimized;
 }
+
+/**
+ * Compresses an image file to a maximum width/height and quality
+ * using Canvas API, returned as a base64 DataURL.
+ */
+export function compressImage(file: File, maxWidth = 800, maxHeight = 800, quality = 0.75): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // Only compress typical image MIME types
+    if (!file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target?.result as string || '');
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions to fit max box
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(event.target?.result as string || '');
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert page element to relative quality jpeg
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        // Fallback to original read if image load fails
+        resolve(event.target?.result as string || '');
+      };
+      img.src = event.target?.result as string || '';
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
