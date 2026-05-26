@@ -415,10 +415,10 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       });
       
       let data;
+      const text = await res.text();
       try {
-        data = await res.json();
+        data = JSON.parse(text);
       } catch (jsonErr) {
-        const text = await res.text();
         throw new Error(text || `Mã lỗi HTTP: ${res.status}`);
       }
 
@@ -675,10 +675,10 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       });
       
       let data;
+      const text = await res.text();
       try {
-        data = await res.json();
+        data = JSON.parse(text);
       } catch (jsonErr) {
-        const text = await res.text();
         throw new Error(text || `Mã lỗi HTTP: ${res.status}`);
       }
 
