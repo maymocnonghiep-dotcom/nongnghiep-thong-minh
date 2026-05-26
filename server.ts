@@ -4,7 +4,7 @@ import cors from "cors";
 import nodemailer from "nodemailer";
 import fs from "fs";
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, initializeFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
 
 
 const app = express();
@@ -979,10 +979,20 @@ const PORT = 3000;
         resolve(fallbackValue);
       }, timeoutMs);
     });
+    
+    // Prevent unhandled promise rejection if it fails after timeout
+    promise.catch((err) => {
+      console.warn(`[Background Promise Rejection] Suppressed:`, err.message || err);
+    });
+
     return Promise.race([
       promise.then((res) => {
         clearTimeout(timer);
         return res;
+      }).catch((err) => {
+        clearTimeout(timer);
+        console.warn(`[Firestore Error] Promise rejected before timeout:`, err.message || err);
+        return fallbackValue;
       }),
       timeoutPromise
     ]);
@@ -1044,8 +1054,8 @@ const PORT = 3000;
   if (firebaseConfig) {
     try {
       const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
-      console.log("SUCCESS: Firebase initialized. Proactively fetching data from Firestore...");
+      db = initializeFirestore(firebaseApp, { experimentalAutoDetectLongPolling: true }, firebaseConfig.firestoreDatabaseId);
+      console.log("SUCCESS: Firebase initialized with long-polling. Proactively fetching data from Firestore...");
     } catch (err) {
       console.error("CRITICAL: Failed to initialize Firebase:", err);
     }
@@ -1472,7 +1482,10 @@ const PORT = 3000;
     }
   });
 
-  app.get("/api/categories", (req, res) => {
+  app.get("/api/categories", async (req, res) => {
+    if (!productsLoaded) {
+      await ensureProductsLoaded();
+    }
     const categoriesFromGroups = [...new Set(activeProducts.map(p => p.group).filter(Boolean))];
     const defaultCategoriesList = [
       "Thiết bị tưới",
