@@ -51,6 +51,18 @@
         "createdAt": { "type": "string" }
       },
       "required": ["name", "phone"]
+    },
+    "Counter": {
+      "title": "Counter",
+      "description": "Visitor counter today and total analytics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "today": { "type": "number" },
+        "total": { "type": "number" },
+        "lastDate": { "type": "string" }
+      },
+      "required": ["today", "total", "lastDate"]
     }
   },
   "firestore": {
@@ -65,6 +77,10 @@
     "/consultations/{consultationId}": {
       "schema": "Consultation",
       "description": "Design consultation requests"
+    },
+    "/counters/{counterId}": {
+      "schema": "Counter",
+      "description": "Visitor counters today and total"
     }
   }
 }

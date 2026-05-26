@@ -7,69 +7,97 @@ interface FooterProps {
 }
 
 export default function Footer({ onAdminClick }: FooterProps) {
-  const [visitorStats, setVisitorStats] = useState({ total: 12458, today: 382 });
+  const [visitorStats, setVisitorStats] = useState({ total: 12480, today: 150 });
 
   useEffect(() => {
+    // 1. Interaction tracker: updates last activity timestamp when user interacts
+    const updateActivityTimestamp = () => {
+      try {
+        localStorage.setItem('visitor_last_activity', String(Date.now()));
+      } catch (e) {}
+    };
+
+    let lastInteractionTime = 0;
+    const handleUserInteraction = () => {
+      const now = Date.now();
+      // Throttle to update at most once every 10 seconds to avoid unnecessary writes
+      if (now - lastInteractionTime > 10000) {
+        lastInteractionTime = now;
+        updateActivityTimestamp();
+      }
+    };
+
+    window.addEventListener('click', handleUserInteraction);
+    window.addEventListener('keydown', handleUserInteraction);
+    window.addEventListener('scroll', handleUserInteraction);
+    window.addEventListener('mousemove', handleUserInteraction);
+
+    // Initial update when script runs
+    updateActivityTimestamp();
+
+    return () => {
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('scroll', handleUserInteraction);
+      window.removeEventListener('mousemove', handleUserInteraction);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Load local storage cache as the initial display fallback
     try {
-      const todayStr = new Date().toLocaleDateString('vi-VN');
-      const storedDate = localStorage.getItem('visit_date');
-      let totalVisits = Number(localStorage.getItem('total_visits'));
-      let todayVisits = Number(localStorage.getItem('today_visits'));
-
-      // If they are NaN or 0, initialize them with standard realistic baseline values
-      if (!totalVisits || isNaN(totalVisits)) {
-        totalVisits = 12458;
+      const cacheToday = localStorage.getItem('cached_today_visits');
+      const cacheTotal = localStorage.getItem('cached_total_visits');
+      if (cacheToday && cacheTotal) {
+        setVisitorStats({
+          today: Number(cacheToday),
+          total: Number(cacheTotal)
+        });
       }
-      if (!todayVisits || isNaN(todayVisits)) {
-        todayVisits = 356;
-      }
+    } catch (e) {}
 
-      // Check if this specific browser has already visited today
-      const uniqueDayKey = 'has_visited_on_' + todayStr;
-      const alreadyVisitedToday = localStorage.getItem(uniqueDayKey) === 'true';
+    const handleVisitorTracking = async () => {
+      try {
+        const now = Date.now();
+        const isSessionActive = sessionStorage.getItem('visitor_session_active') === 'true';
+        const lastActivityStr = localStorage.getItem('visitor_last_activity');
+        const lastActivity = lastActivityStr ? Number(lastActivityStr) : 0;
 
-      if (storedDate !== todayStr) {
-        // New day: set a randomized realistic daily baseline starting between 150-250
-        todayVisits = Math.floor(Math.random() * 100) + 150;
-        localStorage.setItem('visit_date', todayStr);
-        localStorage.setItem('today_visits', String(todayVisits));
-        
-        // Mark as visited today
-        localStorage.setItem(uniqueDayKey, 'true');
-        
-        // Increment overall total
-        totalVisits += 1;
+        // Condition for new hit: 
+        // Either they closed the browser (which clears sessionStorage)
+        // OR more than 30 minutes (1800000 ms) has passed since their last recorded interaction.
+        const isNewVisit = !isSessionActive || (now - lastActivity > 30 * 60 * 1000);
 
-        // Clean up previous days' unique keys to persist only clean storage
-        try {
-          const keysToRemove: string[] = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('has_visited_on_') && key !== uniqueDayKey) {
-              keysToRemove.push(key);
+        if (isNewVisit) {
+          // Increment the counter in the database
+          const res = await fetch('/api/visitor-tick', { method: 'POST' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.today === 'number' && typeof data.total === 'number') {
+              setVisitorStats({ today: data.today, total: data.total });
+              localStorage.setItem('cached_today_visits', String(data.today));
+              localStorage.setItem('cached_total_visits', String(data.total));
             }
           }
-          keysToRemove.forEach(k => localStorage.removeItem(k));
-        } catch (err) {}
-      } else {
-        // Same day, check if this browser is new
-        if (!alreadyVisitedToday) {
-          totalVisits += 1;
-          todayVisits += 1;
-          localStorage.setItem('today_visits', String(todayVisits));
-          localStorage.setItem(uniqueDayKey, 'true');
+          sessionStorage.setItem('visitor_session_active', 'true');
+        } else {
+          // Already active session without timeout: just pull the latest live counts
+          const res = await fetch('/api/visitor-stats');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.today === 'number' && typeof data.total === 'number') {
+              setVisitorStats({ today: data.today, total: data.total });
+              localStorage.setItem('cached_today_visits', String(data.today));
+              localStorage.setItem('cached_total_visits', String(data.total));
+            }
+          }
         }
+      } catch (error) {
+        console.error('Error tracking visitor statistics:', error);
       }
+    };
 
-      localStorage.setItem('total_visits', String(totalVisits));
-
-      setVisitorStats({
-        total: totalVisits,
-        today: todayVisits
-      });
-    } catch (e) {
-      console.error('Failed to store visitor statistics in localStorage:', e);
-    }
+    handleVisitorTracking();
   }, []);
 
   return (

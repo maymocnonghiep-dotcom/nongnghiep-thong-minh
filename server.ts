@@ -1519,6 +1519,115 @@ async function startServer() {
     }
   });
 
+  // --- Visitor Counter Logic (Robust JSON file backing + Firestore backup) ---
+  const counterDbPath = path.join(process.cwd(), "counter_db.json");
+  let visitorStats = { today: 0, total: 0, lastDate: "" };
+
+  const getVNTodayDateStr = () => {
+    const d = new Date();
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    // GMT + 7 (Vietnam Offset)
+    const vnTime = new Date(utc + (3600000 * 7));
+    const yyyy = vnTime.getFullYear();
+    const mm = String(vnTime.getMonth() + 1).padStart(2, "0");
+    const dd = String(vnTime.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const loadVisitorStats = async () => {
+    try {
+      if (fs.existsSync(counterDbPath)) {
+        const fileContent = fs.readFileSync(counterDbPath, "utf-8");
+        const parsed = JSON.parse(fileContent);
+        if (parsed && typeof parsed.today === "number" && typeof parsed.total === "number") {
+          visitorStats = parsed;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load local visitor stats file:", err);
+    }
+
+    if (db) {
+      try {
+        const docRef = doc(db, "counters", "visitor_counter");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const fsData = docSnap.data();
+          if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number") {
+            visitorStats.total = Math.max(visitorStats.total, fsData.total || 0);
+            visitorStats.today = Math.max(visitorStats.today, fsData.today || 0);
+            if (fsData.lastDate) {
+              visitorStats.lastDate = fsData.lastDate;
+            }
+          }
+        }
+      } catch (fErr) {
+        console.error("Failed to sync visitor stats from Firestore:", fErr);
+      }
+    }
+
+    const todayStr = getVNTodayDateStr();
+    if (visitorStats.lastDate !== todayStr) {
+      visitorStats.today = 0;
+      visitorStats.lastDate = todayStr;
+      
+      try {
+        fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+        if (db) {
+          await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
+        }
+      } catch (err) {
+        console.error("Failed to write initial resettled stats:", err);
+      }
+    }
+  };
+
+  // Run the async counter initializer safely in background
+  loadVisitorStats().catch(err => console.error("Failed to setup visitor counter:", err));
+
+  app.get("/api/visitor-stats", async (req, res) => {
+    try {
+      const todayStr = getVNTodayDateStr();
+      if (visitorStats.lastDate !== todayStr) {
+        visitorStats.today = 0;
+        visitorStats.lastDate = todayStr;
+        fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+        if (db) {
+          await setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats));
+        }
+      }
+      res.json({ success: true, today: visitorStats.today, total: visitorStats.total });
+    } catch (err) {
+      console.error("Error in get visitor-stats:", err);
+      res.json({ success: false, today: visitorStats.today, total: visitorStats.total });
+    }
+  });
+
+  app.post("/api/visitor-tick", async (req, res) => {
+    try {
+      const todayStr = getVNTodayDateStr();
+      if (visitorStats.lastDate !== todayStr) {
+        visitorStats.today = 0;
+        visitorStats.lastDate = todayStr;
+      }
+
+      visitorStats.today += 1;
+      visitorStats.total += 1;
+
+      fs.writeFileSync(counterDbPath, JSON.stringify(visitorStats, null, 2), "utf-8");
+
+      if (db) {
+        setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats))
+          .catch((fErr) => console.error("Failed to write visitor tick in Firestore backend:", fErr));
+      }
+
+      res.json({ success: true, today: visitorStats.today, total: visitorStats.total });
+    } catch (err) {
+      console.error("Error ticking visitor count:", err);
+      res.json({ success: false, today: visitorStats.today, total: visitorStats.total });
+    }
+  });
+
   // Vite middleware for development
   if (!isProduction) {
     const { createServer: createViteServer } = await import("vite");
