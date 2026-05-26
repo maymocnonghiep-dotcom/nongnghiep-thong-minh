@@ -1310,6 +1310,8 @@ const PORT = 3000;
       let added = 0;
       let updated = 0;
 
+      const importPromises: Promise<any>[] = [];
+
       importedProducts.forEach((newProd: any) => {
         if (!newProd) return;
         
@@ -1348,13 +1350,23 @@ const PORT = 3000;
           added++;
         }
 
-        // Save imported product to Firestore
+        // Save imported product to Firestore with a safe timeout
         if (db && targetProduct) {
-          setDoc(doc(db, "products", targetProduct.id), cleanUndefinedForFirestore(targetProduct)).catch((err) => {
+          const p = withTimeout(
+            setDoc(doc(db, "products", targetProduct.id), cleanUndefinedForFirestore(targetProduct)),
+            2500,
+            null
+          ).catch((err) => {
             console.error(`Failed to save imported product ${targetProduct.id} to Firestore:`, err);
           });
+          importPromises.push(p);
         }
       });
+
+      // Await all Firestore writes synchronously to prevent unresolved background sockets in serverless Vercel
+      if (importPromises.length > 0) {
+        await withTimeout(Promise.all(importPromises), 4000, null);
+      }
 
       // Save imported products to persistent disk file safely
       saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
@@ -1432,11 +1444,18 @@ const PORT = 3000;
         activeProducts.push(newProduct);
       }
 
-      // Save to Firestore for permanent preservation (non-blocking)
+      // Save to Firestore for permanent preservation (awaited with timeout to prevent Vercel container freeze crash)
       if (db) {
-        setDoc(doc(db, "products", newProduct.id), cleanUndefinedForFirestore(newProduct))
-          .then(() => console.log(`Background: Successfully persisted single product SKU ${cleanSku} to Firestore.`))
-          .catch((fErr) => console.error(`Background Error saving ${newProduct.id} to Firestore:`, fErr));
+        try {
+          await withTimeout(
+            setDoc(doc(db, "products", newProduct.id), cleanUndefinedForFirestore(newProduct)),
+            3000,
+            null
+          );
+          console.log(`Successfully persisted single product SKU ${cleanSku} to Firestore.`);
+        } catch (fErr) {
+          console.error(`Error saving ${newProduct.id} to Firestore:`, fErr);
+        }
       }
 
       // Save to server DB file safely
@@ -1492,11 +1511,18 @@ const PORT = 3000;
     };
     orders.push(newOrder);
 
-    // Save order to Firestore (non-blocking)
+    // Save order to Firestore (awaited with timeout to prevent unresolved socket failure in Vercel)
     if (db) {
-      setDoc(doc(db, "orders", newOrder.id), cleanUndefinedForFirestore(newOrder))
-        .then(() => console.log(`Background: Successfully saved order ${newOrder.id} to Firestore.`))
-        .catch((fErr) => console.error(`Background Error saving order ${newOrder.id}:`, fErr));
+      try {
+        await withTimeout(
+          setDoc(doc(db, "orders", newOrder.id), cleanUndefinedForFirestore(newOrder)),
+          3000,
+          null
+        );
+        console.log(`Successfully saved order ${newOrder.id} to Firestore.`);
+      } catch (fErr) {
+        console.error(`Error saving order ${newOrder.id} to Firestore:`, fErr);
+      }
     }
 
     // Save orders to db backup safely
@@ -1595,11 +1621,18 @@ const PORT = 3000;
 
       consultations.unshift(newConsultation);
 
-      // Save to Firestore (non-blocking)
+      // Save to Firestore (awaited with a quick timeout to comply with Vercel serverless execution guarantees)
       if (db) {
-        setDoc(doc(db, "consultations", newConsultation.id), cleanUndefinedForFirestore(newConsultation))
-          .then(() => console.log(`Background: Successfully saved consultation ${newConsultation.id} to Firestore.`))
-          .catch((fErr) => console.error(`Background Error saving consultation ${newConsultation.id}:`, fErr));
+        try {
+          await withTimeout(
+            setDoc(doc(db, "consultations", newConsultation.id), cleanUndefinedForFirestore(newConsultation)),
+            2500,
+            null
+          );
+          console.log(`Successfully saved consultation ${newConsultation.id} to Firestore.`);
+        } catch (fErr) {
+          console.error(`Error saving consultation ${newConsultation.id} to Firestore:`, fErr);
+        }
       }
 
       // Persist list backup safely
@@ -1695,11 +1728,18 @@ const PORT = 3000;
       if (idx !== -1) {
         consultations[idx].status = status || "pending";
         
-        // Save to Firestore (non-blocking)
+        // Save to Firestore (awaited with a safe timeout for serverless Vercel compliance)
         if (db) {
-          setDoc(doc(db, "consultations", id), cleanUndefinedForFirestore(consultations[idx]))
-            .then(() => console.log(`Background: Successfully updated consultation ${id} status on Firestore.`))
-            .catch((fErr) => console.error(`Background Error updating status of consultation ${id}:`, fErr));
+          try {
+            await withTimeout(
+              setDoc(doc(db, "consultations", id), cleanUndefinedForFirestore(consultations[idx])),
+              2500,
+              null
+            );
+            console.log(`Successfully updated consultation ${id} status on Firestore.`);
+          } catch (fErr) {
+            console.error(`Error updating status of consultation ${id}:`, fErr);
+          }
         }
 
         saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
@@ -1827,8 +1867,15 @@ const PORT = 3000;
       saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
 
       if (db) {
-        setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats))
-          .catch((fErr) => console.error("Failed to write visitor tick in Firestore backend:", fErr));
+        try {
+          await withTimeout(
+            setDoc(doc(db, "counters", "visitor_counter"), cleanUndefinedForFirestore(visitorStats)),
+            2000,
+            null
+          );
+        } catch (fErr) {
+          console.error("Failed to write visitor tick in Firestore backend:", fErr);
+        }
       }
 
       res.json({ success: true, today: visitorStats.today, total: visitorStats.total });
