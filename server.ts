@@ -7,9 +7,8 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
 
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
+const PORT = 3000;
 
   // Configure Email Transporter
   const transporter = nodemailer.createTransport({
@@ -1437,7 +1436,11 @@ async function startServer() {
       }
 
       // Persist list backup
-      fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+      try {
+        fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+      } catch (fWriteErr) {
+        console.warn("Could not write consultations file locally (read-only FS):", fWriteErr);
+      }
 
       const emailBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #f8fafc;">
@@ -1530,7 +1533,11 @@ async function startServer() {
             .catch((fErr) => console.error(`Background Error updating status of consultation ${id}:`, fErr));
         }
 
-        fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+        try {
+          fs.writeFileSync(consultationsDbPath, JSON.stringify(consultations, null, 2), "utf-8");
+        } catch (fWriteErr) {
+          console.warn("Could not save consultation status update locally (read-only FS):", fWriteErr);
+        }
         return res.json({ success: true, consultation: consultations[idx] });
       }
       res.status(404).json({ success: false, message: "Yêu cầu tư vấn không tồn tại." });
@@ -1668,27 +1675,50 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
-  if (!isProduction) {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
+  // --- Synchronize and setup in background ---
+  const isVercel = process.env.VERCEL === "1";
+
+  // Fire background loaders
+  syncFirestoreAndLocalBackups()
+    .then(() => console.log("Database synced in background."))
+    .catch(err => console.error("Failed to sync database in background:", err));
+
+  loadVisitorStats()
+    .then(() => console.log("Visitor stats loaded in background."))
+    .catch(err => console.error("Failed to setup visitor stats:", err));
+
+  // Vite development server middleware setup
+  let viteDevServer: any = null;
+  if (!isProduction && !isVercel) {
+    import("vite").then(async (m) => {
+      viteDevServer = await m.createServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use((req, res, next) => {
+        if (viteDevServer) {
+          viteDevServer.middlewares(req, res, next);
+        } else {
+          next();
+        }
+      });
+    }).catch(err => {
+      console.error("Failed to dynamically load Vite server middleware:", err);
     });
-    app.use(vite.middlewares);
-  } else {
+  } else if (!isVercel) {
+    // In standalone production containers (Cloud Run), serve static assets locally
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT} (mode: ${isProduction ? 'production' : 'development'})`);
-  });
-}
+  // Bind to port and start listener only if we are NOT running in a serverless function (Vercel)
+  if (!isVercel) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT} (mode: ${isProduction ? 'production' : 'development'})`);
+    });
+  }
 
-startServer().catch((err) => {
-  console.error("Failed to start server:", err);
-  process.exit(1);
-});
+  // Export app default for Vercel Serverless Function deployment compatibility
+  export default app;

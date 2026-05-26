@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ais-pre-iypgaasmwdebqn5f6huc5b-326482920860.asia-southeast1.run.app/api/:path*"
+      "destination": "/api/index.ts"
     }
   ]
 }

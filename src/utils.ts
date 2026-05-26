@@ -133,30 +133,11 @@ export function compressImage(file: File, maxWidth = 800, maxHeight = 800, quali
 
 /**
  * Định tuyến API tự động trên các môi trường.
- * - Nếu đang ở localhost hoặc URL Cloud Run mặc định của AI Studio: dùng relative path để tích hợp tự nhiên.
- * - Nếu đang chạy trên domain riêng ngoài (ví dụ: webcuaquan.cloud): trỏ trực tiếp và tuyệt đối về endpoint backend Cloud Run của AI Studio (đã cấu hình CORS cho phép origin thoải mái).
+ * - Trả về đường dẫn relative (ví dụ: '/api/products') để trình duyệt tự động gọi về máy chủ phục vụ tương ứng.
+ * - Khi chạy trên Vercel (webcuaquan.cloud) hoặc local, việc gọi cùng domain gốc loại bỏ triệt để mọi lỗi CORS và tăng tốc độ kết nối.
  */
 export function getApiUrl(path: string): string {
-  if (typeof window === 'undefined') {
-    return path;
-  }
-  
-  const hostname = window.location.hostname;
-  const isLocalOrInternal = 
-    hostname.includes('run.app') || 
-    hostname.includes('localhost') || 
-    hostname === '127.0.0.1' || 
-    hostname === '0.0.0.0';
-    
-  if (isLocalOrInternal) {
-    return path;
-  }
-
-  // Nếu người dùng chạy trên tên miền riêng ngoài (ví dụ: webcuaquan.cloud)
-  // Gọi trực tiếp đến URL backend Cloud Run của dự án (đã bật CORS toàn bộ)
-  const backendBase = 'https://ais-pre-iypgaasmwdebqn5f6huc5b-326482920860.asia-southeast1.run.app';
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${backendBase}${cleanPath}`;
+  return path;
 }
 
 
