@@ -132,13 +132,31 @@ export function compressImage(file: File, maxWidth = 800, maxHeight = 800, quali
 }
 
 /**
- * Định tuyến API trên domain tùy chỉnh (ví dụ Vercel, tên miền riêng).
- * Trả về đường dẫn tương đối (relative path) giúp trình duyệt gửi request về cùng domain đang phục vụ frontend.
- * - Trên môi trường Vercel (webcuaquan.cloud): vercel.json sẽ tự động proxy /api/* về máy chủ Cloud Run từ phía server, loại bỏ triệt để mọi lỗi CORS "Failed to fetch".
- * - Trên môi trường AI Studio (ais-dev-...) hoặc localhost: trình duyệt gọi trực tiếp về máy chủ phát triển tương ứng một cách tự nhiên.
+ * Định tuyến API tự động trên các môi trường.
+ * - Nếu đang ở localhost hoặc URL Cloud Run mặc định của AI Studio: dùng relative path để tích hợp tự nhiên.
+ * - Nếu đang chạy trên domain riêng ngoài (ví dụ: webcuaquan.cloud): trỏ trực tiếp và tuyệt đối về endpoint backend Cloud Run của AI Studio (đã cấu hình CORS cho phép origin thoải mái).
  */
 export function getApiUrl(path: string): string {
-  return path;
+  if (typeof window === 'undefined') {
+    return path;
+  }
+  
+  const hostname = window.location.hostname;
+  const isLocalOrInternal = 
+    hostname.includes('run.app') || 
+    hostname.includes('localhost') || 
+    hostname === '127.0.0.1' || 
+    hostname === '0.0.0.0';
+    
+  if (isLocalOrInternal) {
+    return path;
+  }
+
+  // Nếu người dùng chạy trên tên miền riêng ngoài (ví dụ: webcuaquan.cloud)
+  // Gọi trực tiếp đến URL backend Cloud Run của dự án (đã bật CORS toàn bộ)
+  const backendBase = 'https://ais-pre-iypgaasmwdebqn5f6huc5b-326482920860.asia-southeast1.run.app';
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${backendBase}${cleanPath}`;
 }
 
 

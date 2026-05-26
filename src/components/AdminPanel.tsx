@@ -735,7 +735,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
   const fetchOrders = () => {
     setLoadingOrders(true);
-    fetch('/api/admin/orders')
+    fetch(getApiUrl('/api/admin/orders'))
       .then(res => res.json())
       .then(data => {
         setOrders(data);
