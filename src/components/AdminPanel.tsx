@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin, PlusCircle, Trash2, Plus } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin, PlusCircle, Trash2, Plus, Edit3, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
@@ -12,7 +12,7 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: AdminPanelProps) {
-  const [activeTab, setActiveTab ] = useState<'import' | 'orders' | 'consultations' | 'add_product'>('orders');
+  const [activeTab, setActiveTab ] = useState<'import' | 'orders' | 'consultations' | 'add_product' | 'edit_product'>('orders');
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string; count?: number } | null>(null);
   
@@ -22,6 +22,37 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
   const [consultations, setConsultations] = useState<any[]>([]);
   const [loadingConsultations, setLoadingConsultations] = useState(false);
+
+  // States for product editing
+  const [allProductsCache, setAllProductsCache] = useState<Product[]>([]);
+  const [editSearchQuery, setEditSearchQuery] = useState('');
+  const [foundProducts, setFoundProducts] = useState<Product[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearchingProduct, setIsSearchingProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditingDropdownOpen, setIsEditingDropdownOpen] = useState(false);
+  const editDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSavingEditProduct, setIsSavingEditProduct] = useState(false);
+  const [editProductSuccessMsg, setEditProductSuccessMsg] = useState<string | null>(null);
+  const [editProductErrorMsg, setEditProductErrorMsg] = useState<string | null>(null);
+
+  // Form states for edit product
+  const [editSku, setEditSku] = useState('');
+  const [editManufacturerCode, setEditManufacturerCode] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editGroup, setEditGroup] = useState('');
+  const [editSelectedCategory, setEditSelectedCategory] = useState('Thiết bị tưới');
+  const [editSelectedSubcategoryId, setEditSelectedSubcategoryId] = useState<string>('');
+  const [editCustomCategory, setEditCustomCategory] = useState('');
+  const [editIsNewCategory, setEditIsNewCategory] = useState(false);
+  const [editPrice, setEditPrice] = useState('');
+  const [editOriginalPrice, setEditOriginalPrice] = useState('');
+  const [editUnit, setEditUnit] = useState('Bộ');
+  const [editDescription, setEditDescription] = useState('');
+  const [editImage, setEditImage] = useState('');
+  const [editImagesList, setEditImagesList] = useState<string[]>([]);
+  const [editImageInputVal, setEditImageInputVal] = useState('');
+  const [editSpecs, setEditSpecs] = useState<{ key: string; value: string }[]>([]);
 
   // States for single product creation form
   const defaultCategoriesList = [
@@ -87,6 +118,9 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
+      if (editDropdownRef.current && !editDropdownRef.current.contains(event.target as Node)) {
+        setIsEditingDropdownOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
@@ -94,15 +128,342 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     };
   }, []);
 
+  const fetchProductsCache = async () => {
+    setIsSearchingProduct(true);
+    setEditProductErrorMsg(null);
+    try {
+      const res = await fetch('/api/products');
+      if (!res.ok) throw new Error('Không thể tải các sản phẩm từ máy chủ');
+      const data = await res.json();
+      
+      const localStr = localStorage.getItem('local_products');
+      let localProds: Product[] = [];
+      if (localStr) {
+        try {
+          localProds = JSON.parse(localStr);
+        } catch (err) {
+          localProds = [];
+        }
+      }
+      const merged = [...data];
+      localProds.forEach(lp => {
+        const idx = merged.findIndex(p => p.sku === lp.sku);
+        if (idx !== -1) {
+          merged[idx] = lp;
+        } else {
+          merged.push(lp);
+        }
+      });
+      setAllProductsCache(merged);
+    } catch (err: any) {
+      console.error(err);
+      setEditProductErrorMsg(err.message || 'Lỗi khi tải dữ liệu sản phẩm để chỉnh sửa.');
+    } finally {
+      setIsSearchingProduct(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'orders') {
       fetchOrders();
     } else if (activeTab === 'consultations') {
       fetchConsultations();
-    } else if (activeTab === 'add_product') {
+    } else if (activeTab === 'add_product' || activeTab === 'edit_product') {
       fetchCategories();
+      if (activeTab === 'edit_product') {
+        fetchProductsCache();
+      }
     }
   }, [activeTab]);
+
+  // Dynamic live search as you type
+  useEffect(() => {
+    if (activeTab !== 'edit_product') return;
+
+    const q = editSearchQuery.toLowerCase().trim();
+    if (!q) {
+      setFoundProducts([]);
+      setHasSearched(false);
+      return;
+    }
+
+    setHasSearched(true);
+    const matches = allProductsCache.filter(p => {
+      const skuMatch = p.sku && String(p.sku).toLowerCase().includes(q);
+      const nameMatch = p.name && String(p.name).toLowerCase().includes(q);
+      const mfgMatch = p.manufacturerCode && String(p.manufacturerCode).toLowerCase().includes(q);
+      return skuMatch || nameMatch || mfgMatch;
+    });
+
+    setFoundProducts(matches);
+  }, [editSearchQuery, allProductsCache, activeTab]);
+
+  useEffect(() => {
+    if (editSelectedCategory && subcategoriesMap[editSelectedCategory]) {
+      const subs = subcategoriesMap[editSelectedCategory];
+      if (subs.length > 0) {
+        const hasMatchingSub = subs.some(s => s.id === editSelectedSubcategoryId);
+        if (!hasMatchingSub) {
+          setEditSelectedSubcategoryId(subs[0].id);
+          setEditGroup(subs[0].name);
+        }
+      } else {
+        setEditSelectedSubcategoryId('');
+        setEditGroup('');
+      }
+    } else {
+      setEditSelectedSubcategoryId('');
+      setEditGroup('');
+    }
+  }, [editSelectedCategory]);
+
+  const handleEditProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setEditImage(reader.result);
+        setEditImagesList(prev => [...prev, reader.result as string]);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditProductImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setEditImagesList(prev => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleEditPushImageUrl = () => {
+    if (editImageInputVal.trim()) {
+      setEditImagesList(prev => [...prev, editImageInputVal.trim()]);
+      setEditImageInputVal('');
+    }
+  };
+
+  const handleEditAddSpecRow = () => {
+    setEditSpecs([...editSpecs, { key: '', value: '' }]);
+  };
+
+  const handleEditUpdateSpecRow = (index: number, key: 'key' | 'value', text: string) => {
+    const updated = [...editSpecs];
+    updated[index][key] = text;
+    setEditSpecs(updated);
+  };
+
+  const handleEditRemoveSpecRow = (index: number) => {
+    setEditSpecs(editSpecs.filter((_, i) => i !== index));
+  };
+
+  const handleSearchProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (foundProducts.length === 1) {
+      loadProductToEditForm(foundProducts[0]);
+    }
+  };
+
+  const loadProductToEditForm = (prod: Product) => {
+    setEditingProduct(prod);
+    setEditSku(prod.sku || '');
+    setEditManufacturerCode(prod.manufacturerCode || '');
+    setEditName(prod.name || '');
+    setEditSelectedCategory(prod.group || 'Thiết bị tưới');
+    setEditSelectedSubcategoryId(prod.subcategoryId || '');
+    setEditGroup(prod.subcategoryName || '');
+    setEditPrice(prod.price ? prod.price.toString() : '0');
+    setEditOriginalPrice(prod.originalPrice ? prod.originalPrice.toString() : '');
+    setEditUnit(prod.unit || 'Bộ');
+    setEditDescription(prod.description || '');
+    setEditImage(prod.image || '');
+    setEditImagesList(prod.images || (prod.image ? [prod.image] : []));
+    setEditImageInputVal('');
+    
+    const initialSpecs = Object.entries(prod.specs || {}).map(([k, v]) => ({
+      key: k,
+      value: String(v)
+    }));
+    
+    if (initialSpecs.length === 0) {
+      setEditSpecs([
+        { key: 'Thương hiệu', value: 'Thắng Lợi' },
+        { key: 'Chất liệu', value: 'Nhựa cao cấp' }
+      ]);
+    } else {
+      setEditSpecs(initialSpecs);
+    }
+  };
+
+  const handleEditProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditProductSuccessMsg(null);
+    setEditProductErrorMsg(null);
+
+    if (!editSku.trim()) {
+      setEditProductErrorMsg('Mã sản phẩm (SKU) không được để trống!');
+      return;
+    }
+    if (!editName.trim()) {
+      setEditProductErrorMsg('Tên sản phẩm không được để trống!');
+      return;
+    }
+
+    const finalCategory = editSelectedCategory;
+    if (!finalCategory || !finalCategory.trim()) {
+      setEditProductErrorMsg('Vui lòng chọn hoặc điền thông tin nhóm hàng (Danh mục)!');
+      return;
+    }
+
+    setIsSavingEditProduct(true);
+
+    let finalSubcategoryId = editSelectedSubcategoryId;
+    let finalSubcategoryName = editGroup;
+
+    if (subcategoriesMap[finalCategory]) {
+      if (finalSubcategoryId === 'custom') {
+        const nameVal = editGroup.trim();
+        if (!nameVal) {
+          setEditProductErrorMsg('Vui lòng điền tên thư mục con mới!');
+          setIsSavingEditProduct(false);
+          return;
+        }
+        finalSubcategoryName = nameVal;
+        finalSubcategoryId = nameVal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+      } else {
+        const found = subcategoriesMap[finalCategory].find(s => s.id === finalSubcategoryId);
+        if (found) {
+          finalSubcategoryName = found.name;
+        } else {
+          finalSubcategoryName = editGroup.trim() || finalCategory;
+        }
+      }
+    } else {
+      const nameVal = editGroup.trim();
+      if (!nameVal) {
+        setEditProductErrorMsg('Vui lòng điền tên thư mục con!');
+        setIsSavingEditProduct(false);
+        return;
+      }
+      finalSubcategoryName = nameVal;
+      finalSubcategoryId = nameVal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+    }
+
+    const specsObject: Record<string, string> = {};
+    editSpecs.forEach(spec => {
+      if (spec.key.trim() && spec.value.trim()) {
+        specsObject[spec.key.trim()] = spec.value.trim();
+      }
+    });
+
+    const cleanImages = editImagesList.filter(u => u.trim() !== '');
+    const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
+    const primaryImage = cleanImages.length > 0 ? cleanImages[0] : (editImage.trim() || fallbackImage);
+    const finalImagesToSend = cleanImages.length > 0 ? cleanImages : [primaryImage];
+
+    const bodyData = {
+      sku: editSku.trim(),
+      manufacturerCode: editManufacturerCode.trim(),
+      name: editName.trim(),
+      category: "Danh mục sản phẩm",
+      group: finalCategory.trim(),
+      subcategoryId: finalSubcategoryId,
+      subcategoryName: finalSubcategoryName,
+      price: parseFloat(editPrice) || 0,
+      originalPrice: editOriginalPrice ? parseFloat(editOriginalPrice) : undefined,
+      description: editDescription.trim(),
+      image: primaryImage,
+      images: finalImagesToSend,
+      unit: editUnit.trim(),
+      specs: specsObject
+    };
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bodyData)
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setEditProductSuccessMsg(data.message || 'Cập nhật thông tin sản phẩm thành công!');
+        
+        const existingLocalStr = localStorage.getItem('local_products');
+        let localProducts: Product[] = [];
+        if (existingLocalStr) {
+          try {
+            localProducts = JSON.parse(existingLocalStr);
+          } catch (e) {
+            localProducts = [];
+          }
+        }
+        
+        const updatedProduct: Product = {
+          id: data.product?.id || editingProduct?.id || `PROD-${Date.now()}`,
+          sku: editSku.trim(),
+          manufacturerCode: editManufacturerCode.trim() || undefined,
+          name: editName.trim(),
+          category: "Danh mục sản phẩm",
+          group: finalCategory.trim(),
+          subcategoryId: finalSubcategoryId,
+          subcategoryName: finalSubcategoryName,
+          price: parseFloat(editPrice) || 0,
+          originalPrice: editOriginalPrice ? parseFloat(editOriginalPrice) : undefined,
+          description: editDescription.trim(),
+          image: primaryImage,
+          images: finalImagesToSend,
+          unit: editUnit.trim(),
+          specs: specsObject,
+          reviews: editingProduct?.reviews || []
+        };
+
+        const idx = localProducts.findIndex(p => p.sku.trim().toLowerCase() === editSku.trim().toLowerCase());
+        if (idx !== -1) {
+          localProducts[idx] = updatedProduct;
+        } else {
+          localProducts.push(updatedProduct);
+        }
+        localStorage.setItem('local_products', JSON.stringify(localProducts));
+
+        // Update current local products cache instantly to stay responsive
+        setAllProductsCache(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(p => p.sku.trim().toLowerCase() === editSku.trim().toLowerCase());
+          if (idx !== -1) {
+            updated[idx] = updatedProduct;
+          } else {
+            updated.push(updatedProduct);
+          }
+          return updated;
+        });
+
+        onRefreshProducts?.();
+      } else {
+        setEditProductErrorMsg(data.message || 'Có lỗi xảy ra khi lưu thay đổi.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setEditProductErrorMsg('Lỗi kết nối mạng: ' + (err.message || 'Không thể cập nhật sản phẩm.'));
+    } finally {
+      setIsSavingEditProduct(false);
+    }
+  };
 
   const fetchConsultations = () => {
     setLoadingConsultations(true);
@@ -648,6 +1009,25 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   <PlusCircle size={18} /> Thêm sản phẩm
                 </span>
                 {activeTab === 'add_product' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />}
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab('edit_product');
+                  setEditProductSuccessMsg(null);
+                  setEditProductErrorMsg(null);
+                  setEditingProduct(null);
+                  setFoundProducts([]);
+                  setHasSearched(false);
+                  setEditSearchQuery('');
+                }}
+                className={`px-6 py-3 font-bold text-sm transition-all relative shrink-0 ${
+                  activeTab === 'edit_product' ? 'text-brand-primary' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Edit3 size={18} /> Chỉnh sửa sản phẩm
+                </span>
+                {activeTab === 'edit_product' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />}
               </button>
             </div>
 
@@ -1302,6 +1682,537 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                     </button>
                   </div>
                 </form>
+              </div>
+            ) : activeTab === 'edit_product' ? (
+              <div className="space-y-8 text-sm text-slate-700">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2 not-italic font-sans">
+                    <Edit3 size={24} className="text-brand-primary" /> Chỉnh sửa sản phẩm
+                  </h2>
+                  <p className="text-slate-500 text-xs">Tìm kiếm sản phẩm theo Mã SKU hoặc Tên sản phẩm để chỉnh sửa các thuộc tính, hình ảnh, giá cả...</p>
+                </div>
+
+                <form onSubmit={handleSearchProduct} className="flex gap-3 max-w-2xl bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="text"
+                      placeholder="Nhập mã SKU hoặc tên sản phẩm..."
+                      value={editSearchQuery}
+                      onChange={(e) => setEditSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-800 font-medium transition-all text-xs"
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={isSearchingProduct}
+                    className="px-6 py-3 bg-brand-primary hover:bg-brand-secondary text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    {isSearchingProduct ? 'Đang tìm...' : 'Tìm kiếm'}
+                  </button>
+                </form>
+
+                {/* Error message */}
+                {editProductErrorMsg && !editingProduct && (
+                  <div className="p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl flex items-center gap-3">
+                    <AlertCircle size={18} />
+                    <span>{editProductErrorMsg}</span>
+                  </div>
+                )}
+
+                {/* Found products selection list if multiple */}
+                {hasSearched && foundProducts.length > 1 && !editingProduct && (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-slate-800">Tìm thấy {foundProducts.length} sản phẩm khớp với từ khóa:</h3>
+                    <div className="overflow-x-auto rounded-xl border border-slate-100">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-100">
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Hình ảnh</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Mã SKU</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Tên sản phẩm</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Nhóm hàng / Danh mục</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Đơn giá</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {foundProducts.map((p) => (
+                            <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <img src={p.image} alt={p.name} className="w-12 h-12 object-contain bg-slate-50 rounded" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=100&auto=format&fit=crop&q=60'; }} />
+                              </td>
+                              <td className="p-4 font-mono font-bold text-slate-600">{p.sku}</td>
+                              <td className="p-4 font-bold text-slate-800 text-sm max-w-xs truncate">{p.name}</td>
+                              <td className="p-4 text-xs text-slate-500">
+                                {p.group} {p.subcategoryName ? `> ${p.subcategoryName}` : ''}
+                              </td>
+                              <td className="p-4 text-right font-bold text-brand-primary">
+                                {p.price.toLocaleString('vi-VN')}₫
+                              </td>
+                              <td className="p-4 text-center">
+                                <button 
+                                  onClick={() => loadProductToEditForm(p)}
+                                  className="px-4 py-2 bg-slate-100 hover:bg-brand-primary hover:text-white transition-all rounded-lg text-xs font-bold text-slate-700 cursor-pointer"
+                                >
+                                  Chỉnh sửa
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {hasSearched && foundProducts.length === 0 && !editingProduct && (
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 max-w-2xl">
+                    <p className="text-slate-600 font-bold text-lg mb-1">Không tìm thấy kết quả nào</p>
+                    <p className="text-slate-400 text-sm">Chú/Bác vui lòng kiểm tra lại Mã SKU hoặc Tên sản phẩm vừa nhập.</p>
+                  </div>
+                )}
+
+                {/* Form to edit the product details */}
+                {editingProduct && (
+                  <div className="border-t border-slate-100 pt-8 mt-4">
+                    <div className="flex items-center justify-between mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest bg-slate-200/50 px-2.5 py-1 rounded-full">Đang Chỉnh Sửa</span>
+                        <h3 className="text-base font-bold text-slate-800 mt-2">{editingProduct.name} <span className="text-slate-400 font-mono text-xs">(SKU: {editingProduct.sku})</span></h3>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setEditingProduct(null);
+                          setHasSearched(false);
+                          setFoundProducts([]);
+                          setEditSearchQuery('');
+                          setEditProductSuccessMsg(null);
+                          setEditProductErrorMsg(null);
+                        }}
+                        className="px-4 py-2 bg-slate-200/60 hover:bg-slate-200 text-slate-600 transition-all text-xs font-bold rounded-lg cursor-pointer"
+                      >
+                        Quay lại tìm kiếm
+                      </button>
+                    </div>
+
+                    {editProductSuccessMsg && (
+                      <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl flex items-center gap-3 font-semibold">
+                        <CheckCircle2 size={18} className="text-emerald-500" />
+                        <span>{editProductSuccessMsg}</span>
+                      </div>
+                    )}
+
+                    {editProductErrorMsg && (
+                      <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl flex items-center gap-3 font-medium">
+                        <AlertCircle size={18} className="text-rose-500" />
+                        <span>{editProductErrorMsg}</span>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleEditProductSubmit} className="space-y-6">
+                      {/* Row 1: SKU & Name */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Mã sản phẩm (SKU) <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="text" 
+                            disabled 
+                            value={editSku}
+                            onChange={(e) => setEditSku(e.target.value)}
+                            placeholder="Ví dụ: CO-NONG-01"
+                            className="w-full p-3 bg-slate-105 rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-500 font-mono transition-all font-bold cursor-not-allowed text-xs"
+                          />
+                          <p className="text-[10px] text-slate-400 mt-1 italic">Mã SKU là trường khóa chính không được chỉnh sửa trực tiếp.</p>
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Mã nhà sản xuất (Mã vạch / Code phụ)
+                          </label>
+                          <input 
+                            type="text" 
+                            value={editManufacturerCode}
+                            onChange={(e) => setEditManufacturerCode(e.target.value)}
+                            placeholder="Ví dụ: KST-900-USA"
+                            className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-800 transition-all font-medium text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 md:col-span-1">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Đơn vị tính <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="text" 
+                            value={editUnit}
+                            onChange={(e) => setEditUnit(e.target.value)}
+                            placeholder="Cái, Bộ, Mét, Cuộn..."
+                            className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-800 transition-all font-medium text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Tên sản phẩm <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="text" 
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            placeholder="Ví dụ: Combo Bộ Hẹn Giờ Tưới Tự Động Kèm Bơm Tăng Áp"
+                            className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-brand-primary focus:bg-white text-slate-800 transition-all font-bold text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 2: Category selection */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Nhóm ngành chính (Cấp 1) <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="relative" ref={editDropdownRef}>
+                            <div 
+                              onClick={() => {
+                                if (editIsNewCategory) return;
+                                setIsEditingDropdownOpen(!isEditingDropdownOpen);
+                              }}
+                              className={`w-full p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between cursor-pointer text-slate-800 font-semibold select-none text-xs ${
+                                editIsNewCategory ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''
+                              }`}
+                            >
+                              <span>{editIsNewCategory ? 'Tự điền nhóm mới bên dưới' : editSelectedCategory}</span>
+                              <Upload className={`rotate-180 transition-transform ${isEditingDropdownOpen ? 'rotate-0' : ''}`} size={16} />
+                            </div>
+
+                            {isEditingDropdownOpen && !editIsNewCategory && (
+                              <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-100 rounded-xl shadow-2xl z-[80] overflow-hidden max-h-60 overflow-y-auto font-sans">
+                                {categories.map((cat, ci) => (
+                                  <div 
+                                    key={ci}
+                                    onClick={() => {
+                                      setEditSelectedCategory(cat);
+                                      setIsEditingDropdownOpen(false);
+                                    }}
+                                    className="p-3 text-slate-700 hover:bg-slate-50 cursor-pointer font-medium border-b border-slate-50/50 last:border-0 text-xs"
+                                  >
+                                    {cat}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mt-2">
+                            <input 
+                              type="checkbox" 
+                              id="editIsNewCategory" 
+                              checked={editIsNewCategory}
+                              onChange={(e) => {
+                                setEditIsNewCategory(e.target.checked);
+                                if (e.target.checked) {
+                                  setEditSelectedCategory('');
+                                } else {
+                                  setEditSelectedCategory(categories[0] || 'Thiết bị tưới');
+                                }
+                              }}
+                              className="w-4 h-4 text-brand-primary focus:ring-brand-primary accent-brand-primary rounded cursor-pointer"
+                            />
+                            <label htmlFor="editIsNewCategory" className="text-xs text-slate-500 font-bold select-none cursor-pointer">
+                              Nhập nhóm ngành cấp 1 tùy chỉnh mới
+                            </label>
+                          </div>
+
+                          {editIsNewCategory && (
+                            <input 
+                              type="text"
+                              value={editSelectedCategory}
+                              onChange={(e) => setEditSelectedCategory(e.target.value)}
+                              placeholder="Nhập tên Nhóm ngành chính cấp 1 mới..."
+                              className="w-full p-3 bg-white mt-1 border border-slate-300 rounded-xl outline-none focus:border-brand-primary text-slate-800 font-bold text-xs"
+                            />
+                          )}
+                        </div>
+
+                        {/* Subcategory */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Thư mục con (Cấp 2) <span className="text-rose-500">*</span>
+                          </label>
+                          
+                          {subcategoriesMap[editSelectedCategory] ? (
+                            <select
+                              value={editSelectedSubcategoryId}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setEditSelectedSubcategoryId(val);
+                                if (val !== 'custom') {
+                                  const found = subcategoriesMap[editSelectedCategory].find(s => s.id === val);
+                                  if (found) setEditGroup(found.name);
+                                } else {
+                                  setEditGroup('');
+                                }
+                              }}
+                              className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-800 font-semibold cursor-pointer text-xs"
+                            >
+                              {subcategoriesMap[editSelectedCategory].map((sub, sIdx) => (
+                                <option key={sIdx} value={sub.id}>{sub.name}</option>
+                              ))}
+                              <option value="custom">-- Thư mục con tùy chỉnh --</option>
+                            </select>
+                          ) : (
+                            <div className="p-3 bg-slate-100 rounded-xl text-xs text-slate-500 font-bold italic">
+                              Hệ thống tự động sử dụng tùy chọn nhập tay bên dưới.
+                            </div>
+                          )}
+
+                          {(!subcategoriesMap[editSelectedCategory] || editSelectedSubcategoryId === 'custom') && (
+                            <input 
+                              type="text"
+                              value={editGroup}
+                              onChange={(e) => setEditGroup(e.target.value)}
+                              placeholder="Nhập tên thư mục con Cấp 2 mới..."
+                              className="w-full p-3 bg-white mt-2 border border-slate-300 rounded-xl outline-none focus:border-brand-primary text-slate-800 font-bold text-xs"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 3: Prices */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Đơn giá Bán hiện tại (VND) <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              value={editPrice}
+                              onChange={(e) => setEditPrice(e.target.value)}
+                              placeholder="Ví dụ: 350000"
+                              className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-800 font-black text-xs"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">VND</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                            Giá gốc chưa giảm (Không bắt buộc)
+                          </label>
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              value={editOriginalPrice}
+                              onChange={(e) => setEditOriginalPrice(e.target.value)}
+                              placeholder="Ví dụ: 450000"
+                              className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-400 font-bold text-xs"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">VND</span>
+                          </div>
+                          {parseFloat(editOriginalPrice) > 0 && parseFloat(editOriginalPrice) > parseFloat(editPrice) && (
+                            <p className="text-[10px] text-emerald-600 font-bold mt-1">
+                              Sản phẩm hiển thị nhãn giảm giá: -{Math.round((1 - parseFloat(editPrice) / parseFloat(editOriginalPrice)) * 100)}%
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 4: Image Details */}
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest border-b border-slate-100 pb-2">Hình ảnh sản phẩm</h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <label className="text-xs font-black text-slate-600 block uppercase">Thêm ảnh chính & Thư viện</label>
+                            
+                            <div className="flex gap-2">
+                              <input 
+                                type="text"
+                                value={editImageInputVal}
+                                onChange={(e) => setEditImageInputVal(e.target.value)}
+                                placeholder="Dán link ảnh từ Unsplash, Imgur..."
+                                className="flex-1 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-medium outline-none focus:border-brand-primary"
+                              />
+                              <button 
+                                type="button"
+                                onClick={handleEditPushImageUrl}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer"
+                              >
+                                Thêm Link
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <label className="border border-dashed border-slate-200 hover:border-brand-primary hover:bg-brand-primary/5 transition-all rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer text-center">
+                                <Plus size={20} className="text-slate-400 mb-1" />
+                                <span className="text-[10px] font-bold text-slate-500">Tải ảnh đơn</span>
+                                <input 
+                                  type="file" 
+                                  accept="image/*"
+                                  onChange={handleEditProductImageUpload}
+                                  className="hidden" 
+                                />
+                              </label>
+
+                              <label className="border border-dashed border-slate-200 hover:border-brand-primary hover:bg-brand-primary/5 transition-all rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer text-center">
+                                <Upload size={20} className="text-slate-400 mb-1" />
+                                <span className="text-[10px] font-bold text-slate-500">Tải loạt ảnh</span>
+                                <input 
+                                  type="file" 
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handleEditProductImagesUpload}
+                                  className="hidden" 
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-600 block uppercase">Thư viện ảnh hiện tại ({editImagesList.length})</label>
+                            
+                            {editImagesList.length === 0 ? (
+                              <div className="p-6 text-center border rounded-xl bg-slate-50 text-xs text-slate-400 font-bold italic">
+                                Chưa có ảnh nào được thêm. Chú/Bác vui lòng tải lên hoặc thêm link ảnh.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-4 gap-2 border bg-slate-50/50 p-3 rounded-xl max-h-48 overflow-y-auto">
+                                {editImagesList.map((imgUrl, imgIdx) => (
+                                  <div key={imgIdx} className="relative aspect-square border bg-white rounded-lg p-1 group overflow-hidden">
+                                    <img src={imgUrl} className="w-full h-full object-contain" alt="" />
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        const clean = editImagesList.filter((_, subIdx) => subIdx !== imgIdx);
+                                        setEditImagesList(clean);
+                                        if (imgUrl === editImage && clean.length > 0) {
+                                          setEditImage(clean[0]);
+                                        } else if (clean.length === 0) {
+                                          setEditImage('');
+                                        }
+                                      }}
+                                      className="absolute inset-0 bg-rose-600/90 hover:bg-rose-700/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer duration-100"
+                                    >
+                                      <Trash2 size={16} className="text-white" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {editImage && (
+                              <div className="pt-2 flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">Ảnh đại diện chính:</span>
+                                <img src={editImage} className="w-6 h-6 rounded object-cover border border-slate-200" alt="" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Row 5: Specs (Dynamic parameters list) */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Thông số kỹ thuật chi tiết</h4>
+                          <button 
+                            type="button"
+                            onClick={handleEditAddSpecRow}
+                            className="text-xs font-bold text-brand-primary flex items-center gap-1 hover:text-brand-secondary cursor-pointer"
+                          >
+                            <Plus size={14} /> Thêm dòng thông số
+                          </button>
+                        </div>
+
+                        {editSpecs.length === 0 ? (
+                          <div className="p-4 bg-slate-50 border rounded-xl text-xs text-slate-400 font-bold italic text-center">
+                            Chưa có thông số nào. Nhấp 'Thêm dòng thông số' để mô tả chi tiết sản phẩm hơn.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {editSpecs.map((spec, sIdx) => (
+                              <div key={sIdx} className="flex gap-3 items-center">
+                                <input 
+                                  type="text"
+                                  value={spec.key}
+                                  onChange={(e) => handleEditUpdateSpecRow(sIdx, 'key', e.target.value)}
+                                  placeholder="Tên thông số (ví dụ: Điện áp, Chất liệu...)"
+                                  className="flex-1 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:border-brand-primary"
+                                />
+                                <input 
+                                  type="text"
+                                  value={spec.value}
+                                  onChange={(e) => handleEditUpdateSpecRow(sIdx, 'value', e.target.value)}
+                                  placeholder="Giá trị (ví dụ: 220V, Nhựa PP cao cấp...)"
+                                  className="flex-1 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-medium outline-none focus:border-brand-primary"
+                                />
+                                <button 
+                                  type="button"
+                                  onClick={() => handleEditRemoveSpecRow(sIdx)}
+                                  className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-all rounded-lg cursor-pointer"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Row 6: Description */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-700 block uppercase tracking-wider">
+                          Mô tả & Chú thích chi tiết sản phẩm
+                        </label>
+                        <textarea
+                          rows={6}
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          placeholder="Nhập thông tin hướng dẫn sử dụng, nguồn gốc sản phẩm, lưu ý vận hành cho Bà con..."
+                          className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-primary placeholder-slate-400 font-medium text-xs text-slate-800"
+                        />
+                      </div>
+
+                      {/* Submit Actions */}
+                      <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setEditingProduct(null);
+                            setHasSearched(false);
+                            setFoundProducts([]);
+                            setEditSearchQuery('');
+                            setEditProductSuccessMsg(null);
+                            setEditProductErrorMsg(null);
+                          }}
+                          className="px-6 py-3 border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-xl font-bold transition-all text-xs cursor-pointer"
+                        >
+                          Hủy & Thôi
+                        </button>
+                        <button 
+                          type="submit"
+                          disabled={isSavingEditProduct}
+                          className="px-8 py-3 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-brand-primary/20 disabled:opacity-75 disabled:cursor-not-allowed"
+                        >
+                          {isSavingEditProduct ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent inline-block" /> Đang lưu chỉnh sửa...
+                            </>
+                          ) : (
+                            <>
+                              Lưu thay đổi <CheckCircle2 size={14} />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
