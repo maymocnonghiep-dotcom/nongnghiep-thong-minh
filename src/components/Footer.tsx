@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Facebook, Youtube, Phone, Mail, MapPin, Eye, Users } from 'lucide-react';
 import Link from './Link';
+import { getApiUrl } from '../utils';
 
 interface FooterProps {
   onAdminClick?: () => void;
@@ -108,7 +109,7 @@ export default function Footer({ onAdminClick }: FooterProps) {
 
         if (isNewVisit) {
           // Increment the counter in the database
-          const res = await fetch('/api/visitor-tick', { method: 'POST' });
+          const res = await fetch(getApiUrl('/api/visitor-tick'), { method: 'POST' });
           if (res.ok) {
             const data = await res.json();
             if (data && typeof data.today === 'number' && typeof data.total === 'number') {
@@ -120,7 +121,7 @@ export default function Footer({ onAdminClick }: FooterProps) {
           safeSessionStorage.setItem('visitor_session_active', 'true');
         } else {
           // Already active session without timeout: just pull the latest live counts
-          const res = await fetch('/api/visitor-stats');
+          const res = await fetch(getApiUrl('/api/visitor-stats'));
           if (res.ok) {
             const data = await res.json();
             if (data && typeof data.today === 'number' && typeof data.total === 'number') {

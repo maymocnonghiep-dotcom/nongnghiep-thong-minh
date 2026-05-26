@@ -17,6 +17,7 @@ import ConsultModal from './components/ConsultModal';
 import { Product, CartItem } from './types';
 import { ShieldCheck, Truck, Clock, Headphones, ArrowRight, ChevronRight } from 'lucide-react';
 import { mainCategories, subcategoriesMap } from './categoriesData';
+import { getApiUrl } from './utils';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -40,7 +41,7 @@ export default function App() {
   }, [currentView]);
 
   const fetchAndMergeProducts = () => {
-    fetch('/api/products')
+    fetch(getApiUrl('/api/products'))
       .then(res => {
         if (!res.ok) {
           throw new Error('Server returned non-OK code');

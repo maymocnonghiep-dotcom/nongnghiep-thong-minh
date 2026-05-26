@@ -131,3 +131,31 @@ export function compressImage(file: File, maxWidth = 800, maxHeight = 800, quali
   });
 }
 
+/**
+ * Trấn an và xử lý việc định tuyến API trên domain tùy chỉnh (ví dụ: Vercel, webcuaquan.cloud).
+ * Trả về endpoint tuyệt đối trỏ trực tiếp về máy chủ backend Cloud Run để làm việc mượt mà.
+ */
+export function getApiUrl(path: string): string {
+  if (typeof window === 'undefined') {
+    return path;
+  }
+  
+  const hostname = window.location.hostname;
+  const isLocalOrInternal = 
+    hostname.includes('run.app') || 
+    hostname.includes('localhost') || 
+    hostname === '127.0.0.1' || 
+    hostname === '0.0.0.0';
+    
+  if (isLocalOrInternal) {
+    return path;
+  }
+
+  // Nếu người dùng chạy trên tên miền riêng webcuaquan.cloud (hoặc Vercel)
+  // Ta trỏ thẳng địa chỉ gọi API về Backend chạy trên Cloud Run của dự án
+  const backendBase = 'https://ais-pre-iypgaasmwdebqn5f6huc5b-326482920860.asia-southeast1.run.app';
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${backendBase}${cleanPath}`;
+}
+
+

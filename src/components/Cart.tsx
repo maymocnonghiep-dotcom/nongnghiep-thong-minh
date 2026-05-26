@@ -2,7 +2,7 @@ import { CartItem } from '../types';
 import { ShoppingCart, X, Plus, Minus, Trash2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState } from 'react';
-import { getHighResImageUrl } from '../utils';
+import { getHighResImageUrl, getApiUrl } from '../utils';
 
 interface CartProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemov
     }
 
     try {
-      const response = await fetch('/api/orders', {
+      const response = await fetch(getApiUrl('/api/orders'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

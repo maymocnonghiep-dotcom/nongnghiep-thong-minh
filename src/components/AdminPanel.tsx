@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
 import { subcategoriesMap } from '../categoriesData';
-import { compressImage } from '../utils';
+import { compressImage, getApiUrl } from '../utils';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -133,7 +133,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     setIsSearchingProduct(true);
     setEditProductErrorMsg(null);
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch(getApiUrl('/api/products'));
       if (!res.ok) throw new Error('Không thể tải các sản phẩm từ máy chủ');
       const data = await res.json();
       
@@ -406,7 +406,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     };
 
     try {
-      const res = await fetch('/api/admin/products', {
+      const res = await fetch(getApiUrl('/api/admin/products'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -488,7 +488,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
   const fetchConsultations = () => {
     setLoadingConsultations(true);
-    fetch('/api/admin/consultations')
+    fetch(getApiUrl('/api/admin/consultations'))
       .then(res => res.json())
       .then(data => {
         setConsultations(data);
@@ -501,7 +501,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   };
 
   const fetchCategories = () => {
-    fetch('/api/categories')
+    fetch(getApiUrl('/api/categories'))
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -666,7 +666,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     };
 
     try {
-      const res = await fetch('/api/admin/products', {
+      const res = await fetch(getApiUrl('/api/admin/products'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -715,7 +715,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   };
 
   const handleUpdateConsultationStatus = (id: string, newStatus: string) => {
-    fetch(`/api/admin/consultations/${id}`, {
+    fetch(getApiUrl(`/api/admin/consultations/${id}`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -829,7 +829,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         // Post parsed products to server backend endpoint with robust fallback
         let result;
         try {
-          const response = await fetch('/api/admin/products/import', {
+          const response = await fetch(getApiUrl('/api/admin/products/import'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

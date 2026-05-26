@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, AlertCircle, Sparkles, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getApiUrl } from '../utils';
 
 interface ConsultModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export default function ConsultModal({ isOpen, onClose }: ConsultModalProps) {
     setErrorStatus(null);
 
     try {
-      const response = await fetch('/api/consultations', {
+      const response = await fetch(getApiUrl('/api/consultations'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

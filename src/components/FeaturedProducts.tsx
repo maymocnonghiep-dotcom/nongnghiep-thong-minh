@@ -3,6 +3,7 @@ import ProductCard from './ProductCard';
 import { ChevronLeft, ChevronRight, ArrowUpNarrowWide, ArrowDownWideNarrow, Percent, Filter } from 'lucide-react';
 import { Product } from '../types';
 import { subcategoriesMap, matchesSubcategoryPattern } from '../categoriesData';
+import { getApiUrl } from '../utils';
 
 interface FeaturedProductsProps {
   onProductClick: (product: Product) => void;
@@ -31,7 +32,7 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
       setLoading(false);
     } else {
       setLoading(true);
-      fetch('/api/products')
+      fetch(getApiUrl('/api/products'))
         .then(res => {
           if (!res.ok) throw new Error('Not OK');
           return res.json();
