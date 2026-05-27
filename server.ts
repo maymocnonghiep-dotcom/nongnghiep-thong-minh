@@ -27,8 +27,180 @@ const PORT = 3000;
   const currentDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
   const distPath = isProduction ? currentDir : path.join(process.cwd(), "dist");
 
-  // Mock Products Data
-  const products: any[] = [];
+  // Mock Products Data (Fallbacks for offline, initial seed and when Firestore quota is exceeded)
+  const products: any[] = [
+    {
+      id: "PROD-FALLBACK-BS5000",
+      sku: "TB-BS5000",
+      manufacturerCode: "BS-5000",
+      name: "Béc phun mưa bù áp BS5000-PRO",
+      category: "Thiết bị tưới",
+      group: "Thiết bị tưới",
+      subcategoryId: "bec-phun",
+      subcategoryName: "Béc & Phun mưa, Phun sương",
+      price: 15000,
+      originalPrice: 20000,
+      discount: 25,
+      unit: "Cái",
+      image: "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60"],
+      description: "Béc tưới phun mưa bù áp BS5000 là dòng béc tưới cao cấp chuyên dụng cho các loại cây ăn trái lâu năm. Cơ chế bù áp thông minh giúp tia nước phân bố đồng đều từ gốc đến ngọn.",
+      specs: { "Chất liệu": "Nhựa POM cao cấp", "Bán kính phun": "1.5m - 3.5m", "Lưu lượng": "30 - 95 L/H", "Áp suất hoạt động": "1.0 - 3.5 bar" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-CLABER",
+      sku: "TB-CLABER",
+      manufacturerCode: "CLABER-8428",
+      name: "Bộ hẹn giờ tưới tự động Claber 8428",
+      category: "Thiết bị tưới",
+      group: "Thiết bị tưới",
+      subcategoryId: "hen-gio-van",
+      subcategoryName: "Hẹn giờ & Van tự động",
+      price: 1250000,
+      originalPrice: 1500000,
+      discount: 16,
+      unit: "Bộ",
+      image: "https://images.unsplash.com/photo-1558904541-efa8c3a30fc9?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1558904541-efa8c3a30fc9?w=500&auto=format&fit=crop&q=60"],
+      description: "Bộ hẹn giờ tưới tự động xuất xứ từ Ý, màn hình LCD tinh thể lỏng hiển thị trực quan thông tin thời gian tưới, thời gian chờ dễ cấu hình.",
+      specs: { "Xuất xứ": "Ý (Italy)", "Nguồn điện": "1 Pin 9V", "Số cổng tưới": "1 cổng", "Áp suất hoạt động": "0.5 - 12 bar" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-PANA",
+      sku: "DD-PANA",
+      manufacturerCode: "A-130JACK",
+      name: "Máy bơm tăng áp chịu nhiệt Panasonic A-130JACK",
+      category: "Đồ điện",
+      group: "Đồ điện",
+      subcategoryId: "may-bom",
+      subcategoryName: "Máy bơm nước",
+      price: 2150000,
+      originalPrice: 2450000,
+      discount: 12,
+      unit: "Máy",
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=60"],
+      description: "Máy bơm tự động tăng áp lực nước cho các thiết bị sử dụng nước trong gia đình, hệ thống tưới tiêu sân vườn quy mô vừa.",
+      specs: { "Công suất": "125W", "Lưu lượng tối đa": "30 Lít/phút", "Độ cao hút tối đa": "9m", "Đường kính ống": "25mm (phi 34)" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-TUDIEN",
+      sku: "DD-TUDIEN",
+      manufacturerCode: "SL-TUDIEN",
+      name: "Tủ điện điều khiển tưới thông minh 2 cổng tưới độc lập",
+      category: "Đồ điện",
+      group: "Đồ điện",
+      subcategoryId: "tu-dien-bao-ve",
+      subcategoryName: "Tủ điện & Thiết bị bảo vệ",
+      price: 850000,
+      originalPrice: 1100000,
+      discount: 22,
+      unit: "Tủ",
+      image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&auto=format&fit=crop&q=60"],
+      description: "Tủ điện chống nước ngoài trời IP65 tích hợp hẹn giờ sóng Wifi SmartLife, bảo vệ chống quá tải quá áp an toàn tuyệt đối.",
+      specs: { "Kết nối": "Wi-Fi 2.4Ghz", "Công suất tải": "Tối đa 30A / 6000W", "Bộ điều khiển": "SmartLife App (iOS/Android)", "Chức năng bảo vệ": "Chống giật, quá tải, quá áp" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-VANDIENTU",
+      sku: "VT-VANDIENTU",
+      manufacturerCode: "UNID-UW15",
+      name: "Van điện từ đồng phi 27 Unid UW-20",
+      category: "Vật tư nước",
+      group: "Vật tư nước",
+      subcategoryId: "khoa-van-nuoc",
+      subcategoryName: "Khóa nước & Van nước",
+      price: 280000,
+      originalPrice: 350000,
+      discount: 20,
+      unit: "Cái",
+      image: "https://images.unsplash.com/photo-1585131976690-ca480d19f6a7?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1585131976690-ca480d19f6a7?w=500&auto=format&fit=crop&q=60"],
+      description: "Van điện từ đồng thau Unid thường đóng nước 220V, độ bền cực cao phù hợp với các hệ thống tưới tự động chia vùng tưới.",
+      specs: { "Vật liệu": "Đồng thau", "Kích thước ren": "phi 27 (3/4\")", "Điện áp điều khiển": "220V AC", "Nhiệt độ hoạt động": "-5 - 80 độ C" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-KEO",
+      sku: "LV-KEO",
+      manufacturerCode: "SADA-SK5",
+      name: "Kéo cắt tỉa cành cộng lực SK5 Nhật Bản SADA 210",
+      category: "Dụng cụ làm vườn",
+      group: "Dụng cụ làm vườn",
+      subcategoryId: "keo-dao-ghep",
+      subcategoryName: "Kéo cắt tỉa & Dao ghép cành",
+      price: 165000,
+      originalPrice: 220000,
+      discount: 25,
+      unit: "Cái",
+      image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500&auto=format&fit=crop&q=60"],
+      description: "Lưỡi kéo chế tạo từ thép SK5 tôi luyện cao cấp siêu sắc bén, thiết kế tay cầm trợ lực cắt êm ái thích hợp cắt tỉa hoa, dọn cành trong vườn cây cảnh, bonsai.",
+      specs: { "Hãng sản xuất": "SADA", "Chất liệu lưỡi kéo": "Thép mạ SK5 Nhật Bản", "Độ cứng lưỡi": "HRC 56", "Độ dài kéo": "210mm" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-IMOU-CRUISER",
+      sku: "CM-IMOU-CRUISER",
+      manufacturerCode: "IPC-S42FP",
+      name: "Camera IMOU Cruiser IPC-S42FP 4.0 Megapixel xoay 360",
+      category: "Camera An Ninh",
+      group: "Camera An Ninh",
+      subcategoryId: "imou",
+      subcategoryName: "Camera IMOU",
+      price: 1290000,
+      originalPrice: 1650000,
+      discount: 21,
+      unit: "Bộ",
+      image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500&auto=format&fit=crop&q=60"],
+      description: "Camera IP hồng ngoại ngoài trời chống nước IP66 xoay quét thông minh 360 độ, độ phân giải 4MP cực kỳ sắc nét ban đêm có màu sinh động, tích hợp còi hú cảnh báo xâm nhập.",
+      specs: { "Độ phân giải": "4.0 Megapixel QHD", "Tầm nhìn xa hồng ngoại": "30 mét", "Quay quét": "Ngang 355°, dọc 90°", "Lưu trữ": "Hỗ trợ thẻ nhớ tối đa 256GB" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-JD8800",
+      sku: "NL-JD8800",
+      manufacturerCode: "JD-8800-PRO",
+      name: "Đèn pha năng lượng mặt trời Jidian JD-8800 100W",
+      category: "Đèn năng lượng mặt trời",
+      group: "Đèn năng lượng mặt trời",
+      subcategoryId: "pha",
+      subcategoryName: "Đèn pha",
+      price: 850000,
+      originalPrice: 1200000,
+      discount: 29,
+      unit: "Bộ",
+      image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1509391366360-2e959784a276?w=500&auto=format&fit=crop&q=60"],
+      description: "Đèn pha năng lượng mặt trời thông minh tự động bật khi trời tối, tắt sạc khi trời sáng. Đi kèm tấm pin mặt trời đa tinh thể chất lượng cao tăng hiệu suất sạc hiệu quả.",
+      specs: { "Chất liệu vỏ đèn": "Nhôm đúc nguyên khối sơn tĩnh điện", "Công suất phát sáng": "100W", "Pin dự phòng": "Lithium Iron Phosphate 16000mAh", "Thời gian sạc": "4 - 6 giờ" },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-CELL-32700",
+      sku: "PL-CELL-32700",
+      manufacturerCode: "32700-LIT",
+      name: "Combo 10 Cell pin Lithium Lifepo4 32700 3.2V 6000mAh",
+      category: "Pin lithium & Linh kiện Pin lithium",
+      group: "Pin lithium & Linh kiện Pin lithium",
+      subcategoryId: "cell-pin",
+      subcategoryName: "Cell pin Lithium",
+      price: 350000,
+      originalPrice: 450000,
+      discount: 22,
+      unit: "Hộp",
+      image: "https://images.unsplash.com/photo-1548142813-c348350df52b?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1548142813-c348350df52b?w=500&auto=format&fit=crop&q=60"],
+      description: "Cell pin sắt phốt phát LiFePO4 32700 chính hãng dòng xả liên tục lên đến 3C chịu nhiệt độ cao siêu bền bỉ, tuổi thọ cực cao thích hợp thiết kế nguồn điện dự trữ, trạm sạc điện mặt trời.",
+      specs: { "Dung lượng định danh": "6000mAh", "Điện áp hoạt động": "2.5V - 3.65V", "Chu kỳ sống": "Trên 2000 lần", "Trọng lượng cell": "145g" },
+      reviews: []
+    }
+  ];
 
   let orders: any[] = [];
   let consultations: any[] = [];
@@ -56,7 +228,7 @@ const PORT = 3000;
 
   const isVercelEnvironment = process.env.VERCEL === "1";
   
-  let activeProducts: any[] = (isProduction || isVercelEnvironment) ? [] : [...products];
+  let activeProducts: any[] = [...products];
   try {
     if (fs.existsSync(dbPath)) {
       const dbContent = fs.readFileSync(dbPath, "utf-8");
@@ -201,6 +373,11 @@ const PORT = 3000;
   let consultationsLoaded = false;
   let visitorStatsLoaded = false;
 
+  let lastProductsFetchAttempt = 0;
+  let lastOrdersFetchAttempt = 0;
+  let lastConsultationsFetchAttempt = 0;
+  let lastVisitorStatsFetchAttempt = 0;
+
   let productsLoadPromise: Promise<void> | null = null;
   let ordersLoadPromise: Promise<void> | null = null;
   let consultationsLoadPromise: Promise<void> | null = null;
@@ -211,9 +388,16 @@ const PORT = 3000;
       productsLoaded = true; // Mark True to avoid infinite retries
       return;
     }
+    const now = Date.now();
+    // Self-healing: if 5 minutes have passed, let's try reading from Firestore again in the next client call
+    if (productsLoaded && (now - lastProductsFetchAttempt > 5 * 60 * 1000)) {
+      productsLoaded = false;
+    }
+
     if (productsLoaded) return;
     if (productsLoadPromise) return productsLoadPromise;
 
+    lastProductsFetchAttempt = now;
     productsLoadPromise = (async () => {
       try {
         console.log("On-demand: Fetching products from Firestore...");
@@ -230,20 +414,18 @@ const PORT = 3000;
           }
           productsLoaded = true;
         } else {
-          if (activeProducts.length > 0) {
-            console.warn("Firestore product fetch failed or timed out. Falling back to memory/disk cache.");
-            productsLoaded = true;
-          } else {
-            throw new Error("Không thể tải danh sách sản phẩm từ Firestore (Hết hạn ngạch/Timeout) và không có dữ liệu sao lưu cục bộ.");
+          console.warn("Firestore product fetch failed or timed out. Falling back to default products list.");
+          if (activeProducts.length === 0) {
+            activeProducts = [...products];
           }
+          productsLoaded = true;
         }
       } catch (err: any) {
-        console.error("On-demand product fetch failed. Falling back to local data.", err);
-        if (activeProducts.length > 0) {
-          productsLoaded = true; // Set to true on error so we fallback to local memory
-        } else {
-          throw err; // Rethrow to let the endpoint fail with 500
+        console.warn("On-demand product fetch failed. Falling back to default products list.", err);
+        if (activeProducts.length === 0) {
+          activeProducts = [...products];
         }
+        productsLoaded = true;
       } finally {
         productsLoadPromise = null;
       }
@@ -257,9 +439,15 @@ const PORT = 3000;
       ordersLoaded = true;
       return;
     }
+    const now = Date.now();
+    if (ordersLoaded && (now - lastOrdersFetchAttempt > 5 * 60 * 1000)) {
+      ordersLoaded = false;
+    }
+
     if (ordersLoaded) return;
     if (ordersLoadPromise) return ordersLoadPromise;
 
+    lastOrdersFetchAttempt = now;
     ordersLoadPromise = (async () => {
       try {
         console.log("On-demand: Fetching orders from Firestore...");
@@ -276,20 +464,12 @@ const PORT = 3000;
           }
           ordersLoaded = true;
         } else {
-          if (orders.length > 0) {
-            console.warn("Firestore orders fetch failed or timed out. Falling back to memory/disk cache.");
-            ordersLoaded = true;
-          } else {
-            throw new Error("Không thể tải danh sách đơn hàng từ Firestore và không có dữ liệu cục bộ.");
-          }
+          console.warn("Firestore orders fetch failed or timed out. Staying with local orders.");
+          ordersLoaded = true;
         }
       } catch (err: any) {
-        console.error("On-demand orders fetch failed. Falling back to local data.", err);
-        if (orders.length > 0) {
-          ordersLoaded = true; // Set to true on error to fallback to local memory
-        } else {
-          throw err;
-        }
+        console.warn("On-demand orders fetch failed. Staying with local orders.", err);
+        ordersLoaded = true;
       } finally {
         ordersLoadPromise = null;
       }
@@ -303,9 +483,15 @@ const PORT = 3000;
       consultationsLoaded = true;
       return;
     }
+    const now = Date.now();
+    if (consultationsLoaded && (now - lastConsultationsFetchAttempt > 5 * 60 * 1000)) {
+      consultationsLoaded = false;
+    }
+
     if (consultationsLoaded) return;
     if (consultationsLoadPromise) return consultationsLoadPromise;
 
+    lastConsultationsFetchAttempt = now;
     consultationsLoadPromise = (async () => {
       try {
         console.log("On-demand: Fetching consultations from Firestore...");
@@ -322,20 +508,12 @@ const PORT = 3000;
           }
           consultationsLoaded = true;
         } else {
-          if (consultations.length > 0) {
-            console.warn("Firestore consultations fetch failed or timed out. Falling back to memory/disk cache.");
-            consultationsLoaded = true;
-          } else {
-            throw new Error("Không thể tải danh sách yêu cầu tư vấn từ Firestore và không có dữ liệu cục bộ.");
-          }
+          console.warn("Firestore consultations fetch failed or timed out. Staying with local consultations.");
+          consultationsLoaded = true;
         }
       } catch (err: any) {
-        console.error("On-demand consultations fetch failed. Falling back to local data.", err);
-        if (consultations.length > 0) {
-          consultationsLoaded = true; // Set to true on error to fallback to local memory
-        } else {
-          throw err;
-        }
+        console.warn("On-demand consultations fetch failed. Staying with local consultations.", err);
+        consultationsLoaded = true;
       } finally {
         consultationsLoadPromise = null;
       }
@@ -349,9 +527,15 @@ const PORT = 3000;
       visitorStatsLoaded = true;
       return;
     }
+    const now = Date.now();
+    if (visitorStatsLoaded && (now - lastVisitorStatsFetchAttempt > 5 * 60 * 1000)) {
+      visitorStatsLoaded = false;
+    }
+
     if (visitorStatsLoaded) return;
     if (visitorStatsLoadPromise) return visitorStatsLoadPromise;
 
+    lastVisitorStatsFetchAttempt = now;
     visitorStatsLoadPromise = (async () => {
       try {
         console.log("On-demand: Fetching visitor stats from Firestore...");
@@ -370,20 +554,12 @@ const PORT = 3000;
           }
           visitorStatsLoaded = true;
         } else {
-          if (visitorStats.total > 0) {
-            console.warn("Firestore visitor stats fetch failed or timed out. Falling back to memory/disk cache.");
-            visitorStatsLoaded = true;
-          } else {
-            throw new Error("Không thể tải thông tin thống kê truy cập từ Firestore.");
-          }
+          console.warn("Firestore visitor stats fetch failed or timed out. Staying with local visitor stats.");
+          visitorStatsLoaded = true;
         }
       } catch (err: any) {
-        console.error("On-demand visitor stats fetch failed. Falling back to local data.", err);
-        if (visitorStats.total > 0) {
-          visitorStatsLoaded = true; // Set to true on error to fallback to local memory
-        } else {
-          throw err;
-        }
+        console.warn("On-demand visitor stats fetch failed. Staying with local visitor stats.", err);
+        visitorStatsLoaded = true;
       } finally {
         visitorStatsLoadPromise = null;
       }
