@@ -1079,7 +1079,7 @@ const PORT = 3000;
     if (productsLoaded) return;
     try {
       console.log("On-demand: Fetching products from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 4000, null);
+      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
       if (querySnapshot) {
         const firestoreProducts: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1194,7 +1194,7 @@ const PORT = 3000;
 
     // 2. Fetch and Seed Products
     try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 2000, null);
+      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
       if (querySnapshot) {
         const firestoreProducts: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1467,7 +1467,7 @@ const PORT = 3000;
         try {
           await withTimeout(
             setDoc(doc(db, "products", newProduct.id), cleanUndefinedForFirestore(newProduct)),
-            3000,
+            8000,
             null
           );
           console.log(`Successfully persisted single product SKU ${cleanSku} to Firestore.`);

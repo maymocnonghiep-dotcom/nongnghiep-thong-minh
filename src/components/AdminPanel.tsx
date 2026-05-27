@@ -688,6 +688,21 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       }
 
       if (res.ok && data.success) {
+        // Also save to localStorage to ensure admin never loses it
+        const localStr = localStorage.getItem('local_products');
+        let localProducts: Product[] = [];
+        if (localStr) {
+          try {
+            localProducts = JSON.parse(localStr);
+          } catch (e) {
+            localProducts = [];
+          }
+        }
+        if (data.product) {
+            localProducts.push(data.product);
+            localStorage.setItem('local_products', JSON.stringify(localProducts));
+        }
+
         setProductSuccessMessage(data.message || 'Thêm sản phẩm thành công!');
         onRefreshProducts?.();
         
