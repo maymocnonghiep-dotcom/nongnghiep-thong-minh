@@ -6,7 +6,6 @@ import fs from "fs";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, initializeFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore/lite";
 
-
 const app = express();
 const PORT = 3000;
 
@@ -1033,9 +1032,20 @@ const PORT = 3000;
     }
   }
 
-  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
   let db: any = null;
   let firebaseConfig: any = null;
+
+  try {
+    const rawConfig = fs.readFileSync(path.join(currentDir, "firebase-applet-config.json"), "utf8");
+    firebaseConfig = JSON.parse(rawConfig);
+  } catch(e) {
+    try {
+      const rawConfig2 = fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8");
+      firebaseConfig = JSON.parse(rawConfig2);
+    } catch (e2) {
+      console.warn("Could not load firebase-applet-config.json from disk");
+    }
+  }
 
   if (process.env.FIREBASE_CONFIG) {
     try {
@@ -1043,13 +1053,6 @@ const PORT = 3000;
       console.log("SUCCESS: Firebase configuration detected in FIREBASE_CONFIG environment variable.");
     } catch (err) {
       console.error("CRITICAL: Failed to parse FIREBASE_CONFIG environment variable:", err);
-    }
-  } else if (fs.existsSync(configPath)) {
-    try {
-      firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      console.log("SUCCESS: Firebase configuration loaded from local firebase-applet-config.json.");
-    } catch (err) {
-      console.error("CRITICAL: Failed to load local firebase-applet-config.json:", err);
     }
   }
 
