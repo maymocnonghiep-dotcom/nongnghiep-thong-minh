@@ -228,11 +228,22 @@ const PORT = 3000;
             console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
             saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
           }
+          productsLoaded = true;
+        } else {
+          if (activeProducts.length > 0) {
+            console.warn("Firestore product fetch failed or timed out. Falling back to memory/disk cache.");
+            productsLoaded = true;
+          } else {
+            throw new Error("Không thể tải danh sách sản phẩm từ Firestore (Hết hạn ngạch/Timeout) và không có dữ liệu sao lưu cục bộ.");
+          }
         }
-        productsLoaded = true;
-      } catch (err) {
+      } catch (err: any) {
         console.error("On-demand product fetch failed. Falling back to local data.", err);
-        productsLoaded = true; // Set to true on error so we fallback to local memory in subsequent requests
+        if (activeProducts.length > 0) {
+          productsLoaded = true; // Set to true on error so we fallback to local memory
+        } else {
+          throw err; // Rethrow to let the endpoint fail with 500
+        }
       } finally {
         productsLoadPromise = null;
       }
@@ -263,11 +274,22 @@ const PORT = 3000;
             console.log(`On-demand loaded ${orders.length} orders from Firestore.`);
             saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
           }
+          ordersLoaded = true;
+        } else {
+          if (orders.length > 0) {
+            console.warn("Firestore orders fetch failed or timed out. Falling back to memory/disk cache.");
+            ordersLoaded = true;
+          } else {
+            throw new Error("Không thể tải danh sách đơn hàng từ Firestore và không có dữ liệu cục bộ.");
+          }
         }
-        ordersLoaded = true;
-      } catch (err) {
+      } catch (err: any) {
         console.error("On-demand orders fetch failed. Falling back to local data.", err);
-        ordersLoaded = true; // Set to true on error to fallback to local memory
+        if (orders.length > 0) {
+          ordersLoaded = true; // Set to true on error to fallback to local memory
+        } else {
+          throw err;
+        }
       } finally {
         ordersLoadPromise = null;
       }
@@ -298,11 +320,22 @@ const PORT = 3000;
             console.log(`On-demand loaded ${consultations.length} consultations from Firestore.`);
             saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
           }
+          consultationsLoaded = true;
+        } else {
+          if (consultations.length > 0) {
+            console.warn("Firestore consultations fetch failed or timed out. Falling back to memory/disk cache.");
+            consultationsLoaded = true;
+          } else {
+            throw new Error("Không thể tải danh sách yêu cầu tư vấn từ Firestore và không có dữ liệu cục bộ.");
+          }
         }
-        consultationsLoaded = true;
-      } catch (err) {
+      } catch (err: any) {
         console.error("On-demand consultations fetch failed. Falling back to local data.", err);
-        consultationsLoaded = true; // Set to true on error to fallback to local memory
+        if (consultations.length > 0) {
+          consultationsLoaded = true; // Set to true on error to fallback to local memory
+        } else {
+          throw err;
+        }
       } finally {
         consultationsLoadPromise = null;
       }
@@ -335,11 +368,22 @@ const PORT = 3000;
             console.log("On-demand loaded visitor counter stats:", visitorStats);
             saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
           }
+          visitorStatsLoaded = true;
+        } else {
+          if (visitorStats.total > 0) {
+            console.warn("Firestore visitor stats fetch failed or timed out. Falling back to memory/disk cache.");
+            visitorStatsLoaded = true;
+          } else {
+            throw new Error("Không thể tải thông tin thống kê truy cập từ Firestore.");
+          }
         }
-        visitorStatsLoaded = true;
-      } catch (err) {
+      } catch (err: any) {
         console.error("On-demand visitor stats fetch failed. Falling back to local data.", err);
-        visitorStatsLoaded = true; // Set to true on error to fallback to local memory
+        if (visitorStats.total > 0) {
+          visitorStatsLoaded = true; // Set to true on error to fallback to local memory
+        } else {
+          throw err;
+        }
       } finally {
         visitorStatsLoadPromise = null;
       }
