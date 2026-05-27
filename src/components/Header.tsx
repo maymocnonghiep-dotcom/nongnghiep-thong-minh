@@ -139,7 +139,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
             onClick={() => onNavigate('home')}
             className="flex items-center gap-2.5 hover:opacity-100 transition-all p-1.5 md:p-2 rounded-2xl group text-left active:scale-[0.98] cursor-pointer"
           >
-            <div className="relative flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl bg-transparent group-hover:scale-105 transition-all overflow-hidden flex-shrink-0">
+            <div className="relative flex items-center justify-center w-14 h-14 md:w-18 md:h-18 rounded-xl bg-transparent group-hover:scale-105 transition-all overflow-hidden flex-shrink-0">
               <img src={logoImage} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col leading-tight">
@@ -204,9 +204,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                             <h4 className="text-sm font-bold text-slate-800 truncate group-hover/res:text-brand-primary transition-colors">{product.name}</h4>
                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                               <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">SKU: {product.sku}</span>
-                              {product.manufacturerCode && (
-                                <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">Mã hãng: {product.manufacturerCode}</span>
-                              )}
+                              {/* Manufacturer code hidden as requested */}
                               <span className="text-xs font-bold text-brand-primary ml-1">{product.price.toLocaleString('vi-VN')}₫</span>
                             </div>
                           </div>
@@ -430,9 +428,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                         <p className="text-xs font-bold truncate">{product.name}</p>
                         <div className="flex flex-wrap items-center gap-1 my-0.5">
                           <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-50 px-1 rounded border border-slate-100">SKU: {product.sku}</span>
-                          {product.manufacturerCode && (
-                            <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100">Hãng: {product.manufacturerCode}</span>
-                          )}
+                          {/* Manufacturer code hidden as requested */}
                         </div>
                         <p className="text-[10px] text-brand-primary font-bold">{product.price.toLocaleString('vi-VN')}đ</p>
                       </div>

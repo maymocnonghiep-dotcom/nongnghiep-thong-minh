@@ -214,11 +214,7 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                     <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg">
                       Mã SKU: {product.sku}
                     </span>
-                    {product.manufacturerCode && (
-                      <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100">
-                        Mã của hãng: {product.manufacturerCode}
-                      </span>
-                    )}
+                    {/* Manufacturer code hidden as requested */}
                   </div>
                   
                   <div className="flex items-center gap-4 mb-6">

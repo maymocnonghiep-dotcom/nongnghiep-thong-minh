@@ -33,6 +33,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isEditingDropdownOpen, setIsEditingDropdownOpen] = useState(false);
   const editDropdownRef = useRef<HTMLDivElement>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const [isSavingEditProduct, setIsSavingEditProduct] = useState(false);
   const [editProductSuccessMsg, setEditProductSuccessMsg] = useState<string | null>(null);
   const [editProductErrorMsg, setEditProductErrorMsg] = useState<string | null>(null);
@@ -121,6 +123,9 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       }
       if (editDropdownRef.current && !editDropdownRef.current.contains(event.target as Node)) {
         setIsEditingDropdownOpen(false);
+      }
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -1735,15 +1740,52 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                 </div>
 
                 <form onSubmit={handleSearchProduct} className="flex gap-3 max-w-2xl bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <div className="relative flex-1">
+                  <div className="relative flex-1" ref={suggestionsRef}>
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                       type="text"
                       placeholder="Nhập mã SKU hoặc tên sản phẩm..."
                       value={editSearchQuery}
-                      onChange={(e) => setEditSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setEditSearchQuery(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
                       className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-slate-200 outline-none focus:border-brand-primary text-slate-800 font-medium transition-all text-xs"
                     />
+
+                    {/* Auto-suggest dropdown container */}
+                    {showSuggestions && editSearchQuery.trim() !== '' && foundProducts.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl border border-slate-200 shadow-xl max-h-80 overflow-y-auto z-50 divide-y divide-slate-100 animate-fadeIn">
+                        <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 border-b border-slate-100">
+                          Gợi ý sản phẩm ({foundProducts.length})
+                        </div>
+                        {foundProducts.slice(0, 8).map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              loadProductToEditForm(p);
+                              setShowSuggestions(false);
+                            }}
+                            className="flex items-center gap-3 p-3 hover:bg-slate-50/80 cursor-pointer transition-colors group"
+                          >
+                            <img 
+                              src={p.image} 
+                              alt={p.name} 
+                              className="w-10 h-10 object-contain rounded bg-slate-50 border border-slate-100 flex-shrink-0 group-hover:scale-105 transition-transform" 
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=100&auto=format&fit=crop&q=60'; }} 
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate group-hover:text-brand-primary transition-colors">{p.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">SKU: {p.sku}</span>
+                                <span className="text-[10px] font-bold text-brand-primary font-sans">{p.price.toLocaleString('vi-VN')}₫</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <button 
                     type="submit"
@@ -1762,14 +1804,25 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                   </div>
                 )}
 
-                {/* Found products selection list if multiple */}
-                {hasSearched && foundProducts.length > 1 && !editingProduct && (
+                {/* Found products selection list if multiple or all products */}
+                {((hasSearched && foundProducts.length >= 1) || (!hasSearched && allProductsCache.length > 0)) && !editingProduct && (
                   <div className="space-y-4">
-                    <h3 className="font-bold text-slate-800">Tìm thấy {foundProducts.length} sản phẩm khớp với từ khóa:</h3>
-                    <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                        {hasSearched ? (
+                          <>Kết quả tìm thấy ({foundProducts.length} sản phẩm):</>
+                        ) : (
+                          <>Danh sách tất cả sản phẩm ({allProductsCache.length}):</>
+                        )}
+                      </h3>
+                      {!hasSearched && (
+                        <span className="text-xs text-slate-400 font-medium bg-slate-100 px-3 py-1 rounded-lg">Nhập mã SKU hoặc Tên sản phẩm để lọc tự động ngay lập tức</span>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm max-h-[500px] overflow-y-auto">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-100">
+                        <thead className="sticky top-0 bg-slate-50 border-b border-slate-100 z-10">
+                          <tr>
                             <th className="p-4 text-xs font-bold text-slate-500 uppercase">Hình ảnh</th>
                             <th className="p-4 text-xs font-bold text-slate-500 uppercase">Mã SKU</th>
                             <th className="p-4 text-xs font-bold text-slate-500 uppercase">Tên sản phẩm</th>
@@ -1779,7 +1832,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           </tr>
                         </thead>
                         <tbody>
-                          {foundProducts.map((p) => (
+                          {(hasSearched ? foundProducts : allProductsCache).map((p) => (
                             <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                               <td className="p-4">
                                 <img src={p.image} alt={p.name} className="w-12 h-12 object-contain bg-slate-50 rounded" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=100&auto=format&fit=crop&q=60'; }} />
@@ -1794,7 +1847,10 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                               </td>
                               <td className="p-4 text-center">
                                 <button 
-                                  onClick={() => loadProductToEditForm(p)}
+                                  onClick={() => {
+                                    loadProductToEditForm(p);
+                                    setShowSuggestions(false);
+                                  }}
                                   className="px-4 py-2 bg-slate-100 hover:bg-brand-primary hover:text-white transition-all rounded-lg text-xs font-bold text-slate-700 cursor-pointer"
                                 >
                                   Chỉnh sửa
