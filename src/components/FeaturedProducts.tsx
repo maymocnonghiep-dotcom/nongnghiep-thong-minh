@@ -11,14 +11,15 @@ interface FeaturedProductsProps {
   categoryFilter?: string;
   initialSubcategory?: string;
   products?: Product[];
+  isLoadingProducts?: boolean;
 }
 
 type SortOption = 'price-asc' | 'price-desc' | 'discount-desc';
 
-export default function FeaturedProducts({ onProductClick, onAddToCart, categoryFilter, initialSubcategory, products }: FeaturedProductsProps) {
-  const [allProducts, setAllProducts] = useState<Product[]>(products || []);
+export default function FeaturedProducts({ onProductClick, onAddToCart, categoryFilter, initialSubcategory, products = [], isLoadingProducts = false }: FeaturedProductsProps) {
+  const [allProducts, setAllProducts] = useState<Product[]>(products);
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
-  const [loading, setLoading] = useState(!products || products.length === 0);
+  const [loading, setLoading] = useState(isLoadingProducts && products.length === 0);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
 
@@ -27,50 +28,9 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
     : [];
 
   useEffect(() => {
-    if (products && products.length > 0) {
-      setAllProducts(products);
-      setLoading(false);
-    } else {
-      setLoading(true);
-      fetch(getApiUrl('/api/products'))
-        .then(res => {
-          if (!res.ok) throw new Error('Not OK');
-          return res.json();
-        })
-        .then(data => {
-          const localStr = localStorage.getItem('local_products');
-          let localProds: Product[] = [];
-          if (localStr) {
-            try {
-              localProds = JSON.parse(localStr);
-            } catch (e) {
-              localProds = [];
-            }
-          }
-          const merged = [...data];
-          localProds.forEach(lp => {
-            const idx = merged.findIndex(p => p.sku === lp.sku);
-            if (idx !== -1) {
-              merged[idx] = lp;
-            } else {
-              merged.push(lp);
-            }
-          });
-          setAllProducts(merged);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.warn("Could not fetch products, reading local:", err);
-          const localStr = localStorage.getItem('local_products');
-          if (localStr) {
-            try {
-              setAllProducts(JSON.parse(localStr));
-            } catch (e) {}
-          }
-          setLoading(false);
-        });
-    }
-  }, [products]);
+    setAllProducts(products);
+    setLoading(isLoadingProducts && products.length === 0);
+  }, [products, isLoadingProducts]);
 
   useEffect(() => {
     setCurrentPage(1);

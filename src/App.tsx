@@ -21,7 +21,21 @@ import { getApiUrl } from './utils';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const cached = localStorage.getItem('cached_products');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // Ignored
+    }
+    return [];
+  });
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -41,6 +55,7 @@ export default function App() {
   }, [currentView]);
 
   const fetchAndMergeProducts = () => {
+    setIsLoadingProducts(true);
     fetch(getApiUrl('/api/products'))
       .then(res => {
         if (!res.ok) {
@@ -50,9 +65,16 @@ export default function App() {
       })
       .then(data => {
         setProducts(data);
+        setIsLoadingProducts(false);
+        try {
+          localStorage.setItem('cached_products', JSON.stringify(data));
+        } catch (e) {
+          // Ignored
+        }
       })
       .catch(err => {
         console.error('Error fetching products:', err);
+        setIsLoadingProducts(false);
       });
   };
 
@@ -373,6 +395,7 @@ export default function App() {
                   <div className="lg:col-span-3">
                     <FeaturedProducts 
                        products={products}
+                       isLoadingProducts={isLoadingProducts}
                        onProductClick={handeProductClick} 
                        onAddToCart={handleAddToCart}
                        categoryFilter={group}
@@ -424,6 +447,8 @@ export default function App() {
             <CategoryGrid onNavigate={handleNavigate} products={products} />
             
             <FeaturedProducts 
+              products={products}
+              isLoadingProducts={isLoadingProducts}
               onProductClick={handeProductClick} 
               onAddToCart={handleAddToCart}
             />

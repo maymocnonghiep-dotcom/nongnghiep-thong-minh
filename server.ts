@@ -201,29 +201,43 @@ const PORT = 3000;
   let consultationsLoaded = false;
   let visitorStatsLoaded = false;
 
+  let productsLoadPromise: Promise<void> | null = null;
+  let ordersLoadPromise: Promise<void> | null = null;
+  let consultationsLoadPromise: Promise<void> | null = null;
+  let visitorStatsLoadPromise: Promise<void> | null = null;
+
   async function ensureProductsLoaded() {
     if (!db) {
       productsLoaded = true; // Mark True to avoid infinite retries
       return;
     }
     if (productsLoaded) return;
-    try {
-      console.log("On-demand: Fetching products from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
-      if (querySnapshot) {
-        const firestoreProducts: any[] = [];
-        querySnapshot.forEach((d) => {
-          firestoreProducts.push(d.data());
-        });
-        if (firestoreProducts.length > 0) {
-          activeProducts = firestoreProducts;
-          console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
+    if (productsLoadPromise) return productsLoadPromise;
+
+    productsLoadPromise = (async () => {
+      try {
+        console.log("On-demand: Fetching products from Firestore...");
+        const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
+        if (querySnapshot) {
+          const firestoreProducts: any[] = [];
+          querySnapshot.forEach((d) => {
+            firestoreProducts.push(d.data());
+          });
+          if (firestoreProducts.length > 0) {
+            activeProducts = firestoreProducts;
+            console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
+            saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
+          }
         }
+        productsLoaded = true;
+      } catch (err) {
+        console.error("On-demand product fetch failed:", err);
+      } finally {
+        productsLoadPromise = null;
       }
-      productsLoaded = true;
-    } catch (err) {
-      console.error("On-demand product fetch failed:", err);
-    }
+    })();
+
+    return productsLoadPromise;
   }
 
   async function ensureOrdersLoaded() {
@@ -232,23 +246,32 @@ const PORT = 3000;
       return;
     }
     if (ordersLoaded) return;
-    try {
-      console.log("On-demand: Fetching orders from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 4000, null);
-      if (querySnapshot) {
-        const firestoreOrders: any[] = [];
-        querySnapshot.forEach((d) => {
-          firestoreOrders.push(d.data());
-        });
-        if (firestoreOrders.length > 0) {
-          orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          console.log(`On-demand loaded ${orders.length} orders from Firestore.`);
+    if (ordersLoadPromise) return ordersLoadPromise;
+
+    ordersLoadPromise = (async () => {
+      try {
+        console.log("On-demand: Fetching orders from Firestore...");
+        const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 4000, null);
+        if (querySnapshot) {
+          const firestoreOrders: any[] = [];
+          querySnapshot.forEach((d) => {
+            firestoreOrders.push(d.data());
+          });
+          if (firestoreOrders.length > 0) {
+            orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            console.log(`On-demand loaded ${orders.length} orders from Firestore.`);
+            saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
+          }
         }
+        ordersLoaded = true;
+      } catch (err) {
+        console.error("On-demand orders fetch failed:", err);
+      } finally {
+        ordersLoadPromise = null;
       }
-      ordersLoaded = true;
-    } catch (err) {
-      console.error("On-demand orders fetch failed:", err);
-    }
+    })();
+
+    return ordersLoadPromise;
   }
 
   async function ensureConsultationsLoaded() {
@@ -257,23 +280,32 @@ const PORT = 3000;
       return;
     }
     if (consultationsLoaded) return;
-    try {
-      console.log("On-demand: Fetching consultations from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 4000, null);
-      if (querySnapshot) {
-        const firestoreConsultations: any[] = [];
-        querySnapshot.forEach((d) => {
-          firestoreConsultations.push(d.data());
-        });
-        if (firestoreConsultations.length > 0) {
-          consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          console.log(`On-demand loaded ${consultations.length} consultations from Firestore.`);
+    if (consultationsLoadPromise) return consultationsLoadPromise;
+
+    consultationsLoadPromise = (async () => {
+      try {
+        console.log("On-demand: Fetching consultations from Firestore...");
+        const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 4000, null);
+        if (querySnapshot) {
+          const firestoreConsultations: any[] = [];
+          querySnapshot.forEach((d) => {
+            firestoreConsultations.push(d.data());
+          });
+          if (firestoreConsultations.length > 0) {
+            consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            console.log(`On-demand loaded ${consultations.length} consultations from Firestore.`);
+            saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
+          }
         }
+        consultationsLoaded = true;
+      } catch (err) {
+        console.error("On-demand consultations fetch failed:", err);
+      } finally {
+        consultationsLoadPromise = null;
       }
-      consultationsLoaded = true;
-    } catch (err) {
-      console.error("On-demand consultations fetch failed:", err);
-    }
+    })();
+
+    return consultationsLoadPromise;
   }
 
   async function ensureVisitorStatsLoaded() {
@@ -282,25 +314,34 @@ const PORT = 3000;
       return;
     }
     if (visitorStatsLoaded) return;
-    try {
-      console.log("On-demand: Fetching visitor stats from Firestore...");
-      const docRef = doc(db, "counters", "visitor_counter");
-      const docSnap = await withTimeout(getDoc(docRef), 3000, null);
-      if (docSnap && docSnap.exists()) {
-        const fsData = docSnap.data();
-        if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number" && fsData.total > 0) {
-          visitorStats.total = Math.max(visitorStats.total, fsData.total || 0);
-          visitorStats.today = Math.max(visitorStats.today, fsData.today || 0);
-          if (fsData.lastDate) {
-            visitorStats.lastDate = fsData.lastDate;
+    if (visitorStatsLoadPromise) return visitorStatsLoadPromise;
+
+    visitorStatsLoadPromise = (async () => {
+      try {
+        console.log("On-demand: Fetching visitor stats from Firestore...");
+        const docRef = doc(db, "counters", "visitor_counter");
+        const docSnap = await withTimeout(getDoc(docRef), 3000, null);
+        if (docSnap && docSnap.exists()) {
+          const fsData = docSnap.data();
+          if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number" && fsData.total > 0) {
+            visitorStats.total = Math.max(visitorStats.total, fsData.total || 0);
+            visitorStats.today = Math.max(visitorStats.today, fsData.today || 0);
+            if (fsData.lastDate) {
+              visitorStats.lastDate = fsData.lastDate;
+            }
+            console.log("On-demand loaded visitor counter stats:", visitorStats);
+            saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
           }
-          console.log("On-demand loaded visitor counter stats:", visitorStats);
         }
+        visitorStatsLoaded = true;
+      } catch (err) {
+        console.error("On-demand visitor stats fetch failed:", err);
+      } finally {
+        visitorStatsLoadPromise = null;
       }
-      visitorStatsLoaded = true;
-    } catch (err) {
-      console.error("On-demand visitor stats fetch failed:", err);
-    }
+    })();
+
+    return visitorStatsLoadPromise;
   }
 
   // Main synchronization function
@@ -322,89 +363,18 @@ const PORT = 3000;
       }
     }
 
-    // 2. Fetch and Seed Products
+    // 2. Pre-fetch all collections concurrently from Firestore on boot
+    console.log("Pre-fetching all collections from Firestore concurrently...");
     try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
-      if (querySnapshot) {
-        const firestoreProducts: any[] = [];
-        querySnapshot.forEach((d) => {
-          firestoreProducts.push(d.data());
-        });
-
-        if (firestoreProducts.length > 0) {
-          activeProducts = firestoreProducts;
-          console.log(`Synced products from Firestore: Loaded ${activeProducts.length} items.`);
-          // Write backup to disk safely
-          saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
-        } else {
-          console.log("Firestore 'products' collection is empty. Seeding with current list in parallel...");
-          const seedPromises = activeProducts.map((item) => {
-            const itemDocRef = doc(db, "products", String(item.id || item.sku));
-            return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
-          });
-          await withTimeout(Promise.all(seedPromises), 2500, null);
-          console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
-        }
-      } else {
-        console.warn("Products sync from Firestore timed out. Falling back to local workspace memory database.");
-      }
+      await Promise.all([
+        ensureProductsLoaded(),
+        ensureOrdersLoaded(),
+        ensureConsultationsLoaded(),
+        ensureVisitorStatsLoaded()
+      ]);
+      console.log("All collections loaded/synced successfully on boot.");
     } catch (err) {
-      console.error("Error syncing products from Firestore. Using local workspace backup...");
-      handleFirestoreError(err, OperationType.LIST, "products");
-    }
-
-    // 3. Sync Orders
-    try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 2000, null);
-      if (querySnapshot) {
-        const firestoreOrders: any[] = [];
-        querySnapshot.forEach((d) => {
-          firestoreOrders.push(d.data());
-        });
-
-        if (firestoreOrders.length > 0) {
-          orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          console.log(`Synced ${orders.length} orders from Firestore.`);
-          saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
-        } else if (orders.length > 0) {
-          console.log(`Seeding ${orders.length} existing orders to Firestore in parallel...`);
-          const seedPromises = orders.map((o) => {
-            return setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
-          });
-          await withTimeout(Promise.all(seedPromises), 2500, null);
-        }
-      } else {
-        console.warn("Orders sync from Firestore timed out. Relying on local backup.");
-      }
-    } catch (err) {
-      console.error("Error syncing orders from Firestore:", err);
-    }
-
-    // 4. Sync Consultations
-    try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 2000, null);
-      if (querySnapshot) {
-        const firestoreConsultations: any[] = [];
-        querySnapshot.forEach((d) => {
-          firestoreConsultations.push(d.data());
-        });
-
-        if (firestoreConsultations.length > 0) {
-          consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          console.log(`Synced ${consultations.length} consultations from Firestore.`);
-          saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
-        } else if (consultations.length > 0) {
-          console.log(`Seeding ${consultations.length} existing consultations to Firestore in parallel...`);
-          const seedPromises = consultations.map((c) => {
-            return setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
-          });
-          await withTimeout(Promise.all(seedPromises), 2500, null);
-        }
-      } else {
-        console.warn("Consultations sync from Firestore timed out. Relying on local backup.");
-      }
-    } catch (err) {
-      console.error("Error syncing consultations from Firestore:", err);
+      console.error("Error doing background collection pre-fetching:", err);
     }
   }
 
