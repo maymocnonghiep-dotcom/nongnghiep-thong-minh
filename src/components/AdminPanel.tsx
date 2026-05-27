@@ -141,26 +141,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       const res = await fetch(getApiUrl('/api/products'));
       if (!res.ok) throw new Error('Không thể tải các sản phẩm từ máy chủ');
       const data = await res.json();
-      
-      const localStr = localStorage.getItem('local_products');
-      let localProds: Product[] = [];
-      if (localStr) {
-        try {
-          localProds = JSON.parse(localStr);
-        } catch (err) {
-          localProds = [];
-        }
-      }
-      const merged = [...data];
-      localProds.forEach(lp => {
-        const idx = merged.findIndex(p => p.sku === lp.sku);
-        if (idx !== -1) {
-          merged[idx] = lp;
-        } else {
-          merged.push(lp);
-        }
-      });
-      setAllProductsCache(merged);
+      setAllProductsCache(data);
     } catch (err: any) {
       console.error(err);
       setEditProductErrorMsg(err.message || 'Lỗi khi tải dữ liệu sản phẩm để chỉnh sửa.');
@@ -430,16 +411,6 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       if (res.ok && data.success) {
         setEditProductSuccessMsg(data.message || 'Cập nhật thông tin sản phẩm thành công!');
         
-        const existingLocalStr = localStorage.getItem('local_products');
-        let localProducts: Product[] = [];
-        if (existingLocalStr) {
-          try {
-            localProducts = JSON.parse(existingLocalStr);
-          } catch (e) {
-            localProducts = [];
-          }
-        }
-        
         const updatedProduct: Product = {
           id: data.product?.id || editingProduct?.id || `PROD-${Date.now()}`,
           sku: editSku.trim(),
@@ -458,14 +429,6 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           specs: specsObject,
           reviews: editingProduct?.reviews || []
         };
-
-        const idx = localProducts.findIndex(p => p.sku.trim().toLowerCase() === editSku.trim().toLowerCase());
-        if (idx !== -1) {
-          localProducts[idx] = updatedProduct;
-        } else {
-          localProducts.push(updatedProduct);
-        }
-        localStorage.setItem('local_products', JSON.stringify(localProducts));
 
         // Update current local products cache instantly to stay responsive
         setAllProductsCache(prev => {
@@ -688,21 +651,6 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       }
 
       if (res.ok && data.success) {
-        // Also save to localStorage to ensure admin never loses it
-        const localStr = localStorage.getItem('local_products');
-        let localProducts: Product[] = [];
-        if (localStr) {
-          try {
-            localProducts = JSON.parse(localStr);
-          } catch (e) {
-            localProducts = [];
-          }
-        }
-        if (data.product) {
-            localProducts.push(data.product);
-            localStorage.setItem('local_products', JSON.stringify(localProducts));
-        }
-
         setProductSuccessMessage(data.message || 'Thêm sản phẩm thành công!');
         onRefreshProducts?.();
         
@@ -846,8 +794,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           };
         });
 
-        // Post parsed products to server backend endpoint with robust fallback
-        let result;
+        // Post parsed products to server backend endpoint
         try {
           const response = await fetch(getApiUrl('/api/admin/products/import'), {
             method: 'POST',
@@ -860,109 +807,34 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           if (response.ok) {
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
-              result = await response.json();
+              const result = await response.json();
+              if (result.success) {
+                setIsImporting(false);
+                setImportResult({
+                  success: true,
+                  message: result.message || `Nhập thành công ${parsedProducts.length} mặt hàng từ file Excel.`,
+                  count: parsedProducts.length
+                });
+                if (onRefreshProducts) {
+                  onRefreshProducts();
+                }
+              } else {
+                setImportResult({
+                  success: false,
+                  message: result.message || 'Có lỗi xảy ra khi nhập dữ liệu.'
+                });
+              }
             } else {
-              result = { fallbackToLocal: true };
+              setImportResult({ success: false, message: 'Server trả về dữ liệu không hợp lệ.' });
             }
           } else {
-            result = { fallbackToLocal: true };
+            setImportResult({ success: false, message: `Lỗi kết nối máy chủ: ${response.status}`});
           }
         } catch (fetchError) {
-          console.warn("Server import endpoint failed, falling back to Local Storage client-side:", fetchError);
-          result = { fallbackToLocal: true };
+          console.error("Lỗi khi nhập sản phẩm:", fetchError);
+          setImportResult({ success: false, message: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' });
         }
-
-        if (result && result.fallbackToLocal) {
-          // Client-side local storage fallback
-          const existingLocalStr = localStorage.getItem('local_products');
-          let localProducts: Product[] = [];
-          if (existingLocalStr) {
-            try {
-              localProducts = JSON.parse(existingLocalStr);
-            } catch (e) {
-              localProducts = [];
-            }
-          }
-
-          let added = 0;
-          let updated = 0;
-
-          parsedProducts.forEach((newProd: Product) => {
-            const skuRaw = newProd.sku !== undefined && newProd.sku !== null ? String(newProd.sku).trim() : "";
-            if (!skuRaw) return;
-
-            const idx = localProducts.findIndex(p => p.sku.trim().toLowerCase() === skuRaw.toLowerCase());
-            if (idx !== -1) {
-              localProducts[idx] = {
-                ...localProducts[idx],
-                ...newProd,
-                sku: skuRaw,
-                reviews: localProducts[idx].reviews || []
-              };
-              updated++;
-            } else {
-              localProducts.push({
-                ...newProd,
-                sku: skuRaw,
-                id: newProd.id || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-              });
-              added++;
-            }
-          });
-
-          localStorage.setItem('local_products', JSON.stringify(localProducts));
-
-          setIsImporting(false);
-          setImportResult({
-            success: true,
-            message: `Nhập dữ liệu thành công! Hệ thống tự động lưu trữ an toàn ${parsedProducts.length} mặt hàng cục bộ trên trình duyệt thiết bị (thêm mới ${added}, cập nhật ${updated}).`,
-            count: parsedProducts.length
-          });
-
-          if (onRefreshProducts) {
-            onRefreshProducts();
-          }
-        } else if (result && result.success) {
-          // Also mirror to local storage on success for extreme reliability
-          const existingLocalStr = localStorage.getItem('local_products');
-          let localProducts: Product[] = [];
-          if (existingLocalStr) {
-            try {
-              localProducts = JSON.parse(existingLocalStr);
-            } catch (e) { localProducts = []; }
-          }
-          parsedProducts.forEach((newProd: Product) => {
-            const skuRaw = newProd.sku !== undefined && newProd.sku !== null ? String(newProd.sku).trim() : "";
-            if (!skuRaw) return;
-            const idx = localProducts.findIndex(p => p.sku.trim().toLowerCase() === skuRaw.toLowerCase());
-            if (idx !== -1) {
-              localProducts[idx] = { ...localProducts[idx], ...newProd, sku: skuRaw };
-            } else {
-              localProducts.push({
-                ...newProd,
-                sku: skuRaw,
-                id: newProd.id || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-              });
-            }
-          });
-          localStorage.setItem('local_products', JSON.stringify(localProducts));
-
-          setIsImporting(false);
-          setImportResult({
-            success: true,
-            message: result.message || `Nhập thành công ${parsedProducts.length} mặt hàng từ file Excel.`,
-            count: parsedProducts.length
-          });
-          if (onRefreshProducts) {
-            onRefreshProducts();
-          }
-        } else {
-          setImportResult({
-            success: false,
-            message: result?.message || 'Có lỗi xảy ra khi nhập dữ liệu.'
-          });
-          setIsImporting(false);
-        }
+        setIsImporting(false);
 
       } catch (error: any) {
         setIsImporting(false);

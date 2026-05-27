@@ -49,34 +49,10 @@ export default function App() {
         return res.json();
       })
       .then(data => {
-        const localStr = localStorage.getItem('local_products');
-        let localProds: Product[] = [];
-        if (localStr) {
-          try {
-            localProds = JSON.parse(localStr);
-          } catch (e) {
-            localProds = [];
-          }
-        }
-        const merged = [...data];
-        localProds.forEach(lp => {
-          const idx = merged.findIndex(p => p.sku === lp.sku);
-          if (idx !== -1) {
-            merged[idx] = lp;
-          } else {
-            merged.push(lp);
-          }
-        });
-        setProducts(merged);
+        setProducts(data);
       })
       .catch(err => {
-        console.error('Error fetching products, falling back to local products:', err);
-        const localStr = localStorage.getItem('local_products');
-        if (localStr) {
-          try {
-            setProducts(JSON.parse(localStr));
-          } catch (e) {}
-        }
+        console.error('Error fetching products:', err);
       });
   };
 
