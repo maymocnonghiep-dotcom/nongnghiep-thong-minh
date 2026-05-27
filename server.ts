@@ -1054,8 +1054,11 @@ const PORT = 3000;
   if (firebaseConfig) {
     try {
       const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
-      console.log("SUCCESS: Firebase initialized. Proactively fetching data from Firestore...");
+      db = initializeFirestore(firebaseApp, {
+        experimentalForceLongPolling: true,
+        ignoreUndefinedProperties: true
+      }, firebaseConfig.firestoreDatabaseId);
+      console.log("SUCCESS: Firebase initialized with long-polling and ignoring undefined properties. Proactively fetching data from Firestore...");
     } catch (err) {
       console.error("CRITICAL: Failed to initialize Firebase:", err);
     }
