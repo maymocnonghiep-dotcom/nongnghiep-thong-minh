@@ -5,6 +5,7 @@ import { Product } from '../types';
 import { getHighResImageUrl } from '../utils';
 import { subcategoriesMap } from '../categoriesData';
 import Link from './Link';
+import logoImage from '../assets/images/robot_plant_logo_1779866135143.png';
 
 interface HeaderProps {
   onNavigate: (view: string) => void;
@@ -138,18 +139,8 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
             onClick={() => onNavigate('home')}
             className="flex items-center gap-2.5 hover:opacity-100 transition-all p-1.5 md:p-2 rounded-2xl group text-left active:scale-[0.98] cursor-pointer"
           >
-            <div className="relative flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border border-brand-primary/10 group-hover:border-brand-primary/30 group-hover:scale-105 transition-all shadow-inner">
-              <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M50 90C55 90 85 65 85 38C85 20 68 12 50 32C32 12 15 20 15 38C15 65 45 90 50 90Z" fill="url(#logo-gradient)" />
-                <path d="M50 32C50 32 68 18 78 30C88 42 80 62 50 85C20 62 12 42 22 30C32 18 50 32 50 32Z" fill="white" opacity="0.15" />
-                <circle cx="50" cy="45" r="5" fill="#ffffff" />
-                <defs>
-                  <linearGradient id="logo-gradient" x1="15" y1="15" x2="85" y2="90" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#15803d" />
-                    <stop offset="100%" stopColor="#0369a1" />
-                  </linearGradient>
-                </defs>
-              </svg>
+            <div className="relative flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl bg-transparent group-hover:scale-105 transition-all overflow-hidden flex-shrink-0">
+              <img src={logoImage} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-base md:text-xl font-black text-brand-primary tracking-tight font-sans">

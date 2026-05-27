@@ -4,7 +4,7 @@ import cors from "cors";
 import nodemailer from "nodemailer";
 import fs from "fs";
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, initializeFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, initializeFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore/lite";
 
 
 const app = express();
@@ -1055,10 +1055,9 @@ const PORT = 3000;
     try {
       const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       db = initializeFirestore(firebaseApp, {
-        experimentalForceLongPolling: true,
         ignoreUndefinedProperties: true
       }, firebaseConfig.firestoreDatabaseId);
-      console.log("SUCCESS: Firebase initialized with long-polling and ignoring undefined properties. Proactively fetching data from Firestore...");
+      console.log("SUCCESS: Firebase initialized in lite mode ignoring undefined properties.");
     } catch (err) {
       console.error("CRITICAL: Failed to initialize Firebase:", err);
     }
@@ -1181,8 +1180,7 @@ const PORT = 3000;
 
     // 1. Validate Connection to Firestore (Skill guidelines mandate)
     try {
-      const { doc: testDoc, getDocFromServer } = await import("firebase/firestore");
-      await withTimeout(getDocFromServer(testDoc(db, 'test', 'connection')), 1500, null);
+      await withTimeout(getDoc(doc(db, 'test', 'connection')), 1500, null);
       console.log("Firestore connection test passed successfully/bypassed.");
     } catch (error) {
       if (error instanceof Error && error.message.includes('the client is offline')) {
