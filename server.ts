@@ -928,7 +928,9 @@ const PORT = 3000;
     console.error("Failed to load local consultations backup:", err);
   }
 
-  let activeProducts: any[] = [...products];
+  const isVercelEnvironment = process.env.VERCEL === "1";
+  
+  let activeProducts: any[] = (isProduction || isVercelEnvironment) ? [] : [...products];
   try {
     if (fs.existsSync(dbPath)) {
       const dbContent = fs.readFileSync(dbPath, "utf-8");
