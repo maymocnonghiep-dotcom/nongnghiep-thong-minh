@@ -469,6 +469,24 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   };
 
   const fetchCategories = () => {
+    try {
+      const cached = localStorage.getItem('cached_categories');
+      const cachedTime = localStorage.getItem('cached_categories_time');
+      if (cached && cachedTime && (Date.now() - Number(cachedTime) < 60000)) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCategories(prev => {
+            const merged = Array.from(new Set([...prev, ...parsed]));
+            return merged;
+          });
+          setSelectedCategory(prev => prev || parsed[0]);
+          return;
+        }
+      }
+    } catch (e) {
+      // Ignored
+    }
+
     fetch(getApiUrl('/api/categories'))
       .then(res => res.json())
       .then(data => {
@@ -478,6 +496,12 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
             return merged;
           });
           setSelectedCategory(prev => prev || data[0]);
+          try {
+            localStorage.setItem('cached_categories', JSON.stringify(data));
+            localStorage.setItem('cached_categories_time', String(Date.now()));
+          } catch (e) {
+            // Ignored
+          }
         }
       })
       .catch(err => console.error('Error fetching categories:', err));

@@ -107,7 +107,16 @@ export default function Footer({ onAdminClick }: FooterProps) {
         // OR more than 30 minutes (1800000 ms) has passed since their last recorded interaction.
         const isNewVisit = !isSessionActive || (now - lastActivity > 30 * 60 * 1000);
 
-        if (isNewVisit) {
+        // Throttle backend GET/POST statistics calls to at most once per 60 seconds per tab session
+        const lastStatsTime = safeSessionStorage.getItem('visitor_last_stats_time');
+        const hasTickedThisSession = safeSessionStorage.getItem('visitor_session_ticked_this_tab') === 'true';
+
+        if (lastStatsTime && (now - Number(lastStatsTime) < 60000)) {
+          console.log('[Visitor Stats Throttle] Prevented spam. Reusing cached stats.');
+          return;
+        }
+
+        if (isNewVisit && !hasTickedThisSession) {
           // Increment the counter in the database
           const res = await fetch(getApiUrl('/api/visitor-tick'), { method: 'POST' });
           if (res.ok) {
@@ -119,8 +128,10 @@ export default function Footer({ onAdminClick }: FooterProps) {
             }
           }
           safeSessionStorage.setItem('visitor_session_active', 'true');
+          safeSessionStorage.setItem('visitor_session_ticked_this_tab', 'true');
+          safeSessionStorage.setItem('visitor_last_stats_time', String(now));
         } else {
-          // Already active session without timeout: just pull the latest live counts
+          // Already active session without timeout: just pull the latest live counts (throttled)
           const res = await fetch(getApiUrl('/api/visitor-stats'));
           if (res.ok) {
             const data = await res.json();
@@ -130,6 +141,7 @@ export default function Footer({ onAdminClick }: FooterProps) {
               safeLocalStorage.setItem('cached_total_visits', String(data.total));
             }
           }
+          safeSessionStorage.setItem('visitor_last_stats_time', String(now));
         }
       } catch (error) {
         console.error('Error tracking visitor statistics:', error);

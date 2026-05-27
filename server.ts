@@ -28,7 +28,321 @@ const PORT = 3000;
   const distPath = isProduction ? currentDir : path.join(process.cwd(), "dist");
 
   // Mock Products Data
-  const products: any[] = [];
+  const products: any[] = [
+    {
+      id: "PROD-FALLBACK-01",
+      sku: "BEC-PS-4H",
+      manufacturerCode: "TL-BEC01",
+      name: "Béc phun sương 4 hướng chân tê 8mm Thắng Lợi",
+      category: "Thiết bị tưới",
+      group: "Thiết bị tưới",
+      subcategoryId: "bec-phun",
+      subcategoryName: "Béc & Phun mưa, Phun sương",
+      price: 15000,
+      originalPrice: 20000,
+      discount: 25,
+      image: "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60"],
+      description: "Béc phun sương làm mát, chuyên dùng tưới lan, tưới nhà màng, làm mát quán cà phê, giảm nhiệt độ môi trường hiệu quả. Chất liệu nhựa ABS chịu nhiệt độ thời tiết tốt.",
+      unit: "Chiếc",
+      specs: {
+        "Thương hiệu": "Thắng Lợi",
+        "Chất liệu": "Nhựa ABS cao cấp",
+        "Áp suất hoạt động": "1.5 - 3.0 bar",
+        "Bán kính phun": "0.8m - 1.2m",
+        "Lưu lượng": "35 - 40 L/H"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-02",
+      sku: "BEC-NG-BUAP",
+      manufacturerCode: "TL-BUAP02",
+      name: "Đầu tưới nhỏ giọt bù áp Super Spurt 4L/H chính hãng",
+      category: "Thiết bị tưới",
+      group: "Thiết bị tưới",
+      subcategoryId: "tuoi-nho-giot",
+      subcategoryName: "Tưới nhỏ giọt & Bù áp",
+      price: 3500,
+      originalPrice: 5000,
+      discount: 30,
+      image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500&auto=format&fit=crop&q=60"],
+      description: "Đầu tưới nhỏ giọt bù áp cao cấp, cung cấp lưu lượng nước cực kỳ đồng đều cho toàn bộ hàng cây ngay cả ở các độ cao khác nhau. Chống tắc nghẽn tốt, dễ lắp ráp.",
+      unit: "Chiếc",
+      specs: {
+        "Xuất xứ": "Việt Nam",
+        "Thương hiệu": "Đầu tưới Thắng Lợi",
+        "Lưu lượng định mức": "4 Lít/Giờ",
+        "Áp suất hoạt động": "0.5 - 3.5 bar"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-03",
+      sku: "ONG-LDPE-16",
+      manufacturerCode: "TL-LDPE16",
+      name: "Dây ống dẫn nước tưới LDPE Φ16mm Thắng Lợi (Cuộn 100m)",
+      category: "Thiết bị tưới",
+      group: "Thiết bị tưới",
+      subcategoryId: "day-tuoi-ong",
+      subcategoryName: "Dây tưới & Ống dẫn",
+      price: 6500,
+      originalPrice: 8000,
+      discount: 18,
+      image: "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500&auto=format&fit=crop&q=60"],
+      description: "Ống dẫn nước LDPE chất lượng vượt trội từ hạt nhựa nguyên sinh, chống tia UV vượt trội, tăng tuổi thọ lên tới hơn 10 năm sử dụng ngoài trời nắng gió khắc nghiệt.",
+      unit: "Mét",
+      specs: {
+        "Thương hiệu": "Thắng Lợi",
+        "Đường kính": "16mm",
+        "Độ dày ống": "1.2mm",
+        "Áp suất chịu đựng": "4 bar",
+        "Độ dài cuộn": "100m"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-04",
+      sku: "HG-TSMART-01",
+      manufacturerCode: "TS-HG01",
+      name: "Bộ hẹn giờ tưới cây tự động tSmart IP65 chống nước",
+      category: "Thiết bị tưới",
+      group: "Thiết bị tưới",
+      subcategoryId: "hen-gio-van",
+      subcategoryName: "Hẹn giờ & Van tự động",
+      price: 450000,
+      originalPrice: 550000,
+      discount: 18,
+      image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60"],
+      description: "Van hẹn giờ tưới tự động chuyên nghiệp cho ban công, sân thượng, biệt thự nhà phố. Lắp trực tiếp vào vòi ren 21 hoặc 27 vô cùng dễ dàng, hoạt động bền bỉ, an toàn.",
+      unit: "Bộ",
+      specs: {
+        "Thương hiệu": "tSmart",
+        "Nguồn hoạt động": "2 pin AA 1.5V",
+        "Tiêu chuẩn chống nước": "IP65",
+        "Cơ cấu van": "Van điện từ màng khí",
+        "Thời gian hẹn giờ tưới": "1 phút - 300 phút"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-05",
+      sku: "BOM-TA-24V",
+      manufacturerCode: "BOM-TA24",
+      name: "Máy bơm nước tăng áp thông minh mini 24V DC chống giật",
+      category: "Đồ điện",
+      group: "Đồ điện",
+      subcategoryId: "may-bom",
+      subcategoryName: "Máy bơm nước",
+      price: 850000,
+      originalPrice: 1100000,
+      discount: 22,
+      image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=60"],
+      description: "Máy bơm bổ trợ lực tăng áp lực vòi hoa sen, vòi lavabo, máy giặt, hệ thống tưới phun sương. Sử dụng điện áp 24V tuyệt đối an toàn chống rò rỉ điện giật nguy hiểm.",
+      unit: "Bộ",
+      specs: {
+        "Công suất": "150W",
+        "Điện áp sử dụng": "24V DC (kèm cục đổi nguồn 220V)",
+        "Lưu lượng nước tối đa": "35 Lít/Phút",
+        "Cột áp đẩy cao tối đa": "15 mét",
+        "Trọng lượng": "1.3 kg"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-06",
+      sku: "TD-BOM-1P",
+      manufacturerCode: "TD-BAOVE",
+      name: "Tủ điện bảo vệ máy bơm tự động chống quá tải chống cạn",
+      category: "Đồ điện",
+      group: "Đồ điện",
+      subcategoryId: "tu-dien-bao-ve",
+      subcategoryName: "Tủ điện & Thiết bị bảo vệ",
+      price: 580000,
+      originalPrice: 750000,
+      discount: 22,
+      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&auto=format&fit=crop&q=60"],
+      description: "Tủ điện chuyên thầu lắp đặt tủ điều khiển, bảo vệ hệ thống máy bơm tưới tiêu, bơm đẩy lầu từ tình trạng chập cháy, mất pha rò rỉ hoặc chạy không nước gây hỏng động cơ.",
+      unit: "Tủ",
+      specs: {
+        "Điện áp hoạt động": "220V AC 50Hz",
+        "Thiết bị tích hợp": "Aptomat chống giật, Contactor dòng cao, Rơ le nhiệt, Hộp nhựa kín nước ngoài trời",
+        "Chế độ vận hành": "Tay (Manual) / Tự động (Auto)"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-07",
+      sku: "CT-TUYA-WF",
+      manufacturerCode: "TY-SMART01",
+      name: "Công tắc thông minh WiFi hẹn giờ điều khiển qua điện thoại Tuya 20A",
+      category: "Đồ điện",
+      group: "Đồ điện",
+      subcategoryId: "hen-gio-dieu-khien",
+      subcategoryName: "Hẹn giờ & Điều khiển",
+      price: 180000,
+      originalPrice: 240000,
+      discount: 25,
+      image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60"],
+      description: "Công tắc đóng ngắt thông minh tải trọng cao chuyên dành cho bình nước nóng, máy bơm vườn. Kết nối Wifi không dây điều khiển bật tắt bằng app từ bất kỳ nơi đâu.",
+      unit: "Chiếc",
+      specs: {
+        "Ứng dụng quản lý": "Smart Life / Tuya Smart",
+        "Tần số Wifi": "2.4GHz",
+        "Cường độ tải tối đa": "20A (Phù hợp máy bơm dưới 2HP)",
+        "Tính năng phụ trợ": "Hẹn giờ lặp lại, Đo điện năng gia đình tiêu thụ, Chia sẻ quyền điều khiển"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-08",
+      sku: "KEO-SK5-JP",
+      manufacturerCode: "SK5-JAPAN",
+      name: "Kéo cắt tỉa cành cây Nhật Bản thép SK5 đúc nguyên khối",
+      category: "Dụng cụ làm vườn",
+      group: "Dụng cụ làm vườn",
+      subcategoryId: "keo-dao-ghep",
+      subcategoryName: "Kéo cắt tỉa & Dao ghép cành",
+      price: 125000,
+      originalPrice: 190000,
+      discount: 34,
+      image: "https://images.unsplash.com/photo-1617576683096-00fc8eecb3af?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1617576683096-00fc8eecb3af?w=500&auto=format&fit=crop&q=60"],
+      description: "Kéo tỉa cành cây cảnh bonsai, làm vườn siêu sắc bén. Vật liệu dập thép SK5 Nhật Bản cao cấp cho vết cắt dứt khoát mượt mà, hạn chế tổn hại xơ vỏ thân cây.",
+      unit: "Chiếc",
+      specs: {
+        "Xuất xứ công nghệ": "Nhật Bản (Japan Technology)",
+        "Chất liệu lưỡi kéo": "Thép mactenxit SK5 tôi cứng lực cao",
+        "Chiều dài toàn bộ": "210 mm",
+        "Tính năng cộng lực": "Lò xo đàn hồi giảm mỏi cổ tay"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-09",
+      sku: "BP-LITHIUM-12V",
+      manufacturerCode: "ECO-12V",
+      name: "Bình phun thuốc sâu đeo vai bằng pin lithium thế hệ mới 16L",
+      category: "Dụng cụ làm vườn",
+      group: "Dụng cụ làm vườn",
+      subcategoryId: "may-cat-binh-phun",
+      subcategoryName: "Máy cắt cỏ & Bình phun pin",
+      price: 620000,
+      originalPrice: 780000,
+      discount: 20,
+      image: "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500&auto=format&fit=crop&q=60"],
+      description: "Bình phun điện tử đeo vai sử dụng ắc quy Pin Lithium 12V cho thời gian vận hành liên tục 5-6 tiếng phun thuốc trừ sâu, tưới phân bón. Trọng lượng nhẹ hơn ắc quy axit chì 50%.",
+      unit: "Bộ",
+      specs: {
+        "Dung tích chứa": "16 Lít",
+        "Loại nguồn điện": "Pin Lithium Li-ion 12V 8Ah siêu bền",
+        "Áp suất phun": "0.15 - 0.40 MPa",
+        "Hành trình máy bơm": "Ép kép tự động ngắt vòi khi buông cò"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-10",
+      sku: "CAM-IMOU-CR",
+      manufacturerCode: "IMOU-IPC-S22FP",
+      name: "Camera Wifi Ngoài Trời IMOU Cruiser 2MP xoay 360 Full Color",
+      category: "Camera An Ninh",
+      group: "Camera An Ninh",
+      subcategoryId: "imou",
+      subcategoryName: "Camera IMOU",
+      price: 790000,
+      originalPrice: 1250000,
+      discount: 36,
+      image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500&auto=format&fit=crop&q=60"],
+      description: "Camera IP giám sát an ninh ngoài trời chịu mưa bão nắng tốt. Hỗ trợ ghi âm, cảnh báo còi hú nháy đèn, đàm thoại 2 chiều đắc lực, xem ngày đêm có màu sống sinh động.",
+      unit: "Bộ",
+      specs: {
+        "Độ cảm biến hình ảnh": "2.0 Megapixel (Full HD 1080P)",
+        "Tính năng xoay quét": "Ngang 355 độ, dọc 90 độ mượt mà",
+        "Tầm nhìn đêm xa": "Hồng ngoại thông minh lên tới 30m"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-11",
+      sku: "DEN-SL-200W",
+      manufacturerCode: "SOLAR-PHA200",
+      name: "Đèn pha Led năng lượng mặt trời chống nước IP67 Solar Light 200W",
+      category: "Đèn năng lượng mặt trời",
+      group: "Đèn năng lượng mặt trời",
+      subcategoryId: "pha",
+      subcategoryName: "Đèn pha",
+      price: 490000,
+      originalPrice: 650000,
+      discount: 24,
+      image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&auto=format&fit=crop&q=60"],
+      description: "Đèn pha tiết kiệm điện 100% bằng ánh sáng tự nhiên cho sân vườn, đèn ngõ ngách, quốc lộ. Tấm thu năng lượng mặt trời đa tinh thể hấp thụ ánh sáng cực độ hiệu năng cao.",
+      unit: "Bộ",
+      specs: {
+        "Dung lượng Pin lưu trữ": "24.000 mAh Lithium Sắt (LifePo4)",
+        "Tiêu chuẩn kháng nước ngoài trời": "IP67 hoàn toàn chống bụi bẩn nước mưa",
+        "Thời gian sạc đầy": "4 - 6 tiếng nắng lớn",
+        "Thời gian chiếu sáng": "12 - 15 giờ liên tiếp"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-12",
+      sku: "CELL-PIN-50AH",
+      manufacturerCode: "LF-50AH",
+      name: "Cell Pin Lithium Sắt LiFePO4 EVE 3.2V 50Ah đầu ren vít",
+      category: "Pin lithium & Linh kiện Pin lithium",
+      group: "Pin lithium & Linh kiện Pin lithium",
+      subcategoryId: "cell-pin",
+      subcategoryName: "Cell pin Lithium",
+      price: 280000,
+      originalPrice: 350000,
+      discount: 20,
+      image: "https://images.unsplash.com/photo-1548345680-f5475ea5df84?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1548345680-f5475ea5df84?w=500&auto=format&fit=crop&q=60"],
+      description: "Cell pin lithium sắt 3.2V 50Ah chuyên đóng khối pin xe điện, bình pin lưu trữ năng lượng mặt trời cho gia đình hệ 12V, 24V, 48V. Tuổi thọ cao nạp xả cực khủng trên 3000 chu kỳ.",
+      unit: "Viên",
+      specs: {
+        "Dung lượng thực tế": "50Ah",
+        "Điện áp định mức": "3.2V",
+        "Nội trở cell pin": "Dưới 0.8 miliOhm",
+        "Trọng lượng viên": "1.15 kg"
+      },
+      reviews: []
+    },
+    {
+      id: "PROD-FALLBACK-13",
+      sku: "KP-LITH-100",
+      manufacturerCode: "LITHIUM-12V100",
+      name: "Khối bình pin Lithium 12V 100Ah tích hợp mạch bảo vệ BMS",
+      category: "Pin lithium & Linh kiện Pin lithium",
+      group: "Pin lithium & Linh kiện Pin lithium",
+      subcategoryId: "khoi-pin-hoan-thien",
+      subcategoryName: "Khối pin hoàn thiện",
+      price: 3450000,
+      originalPrice: 4200000,
+      discount: 18,
+      image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=60",
+      images: ["https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=60"],
+      description: "Khối pin hoàn chỉnh chất lượng tối ưu thay thế cho bình ắc quy chì truyền thống vốn nặng nề và độc hại. Thích hợp dùng dự phòng lưu điện quạt, đèn led, đi dã ngoại hay dã ngoại.",
+      unit: "Bình",
+      specs: {
+        "Điện áp xả liên tục": "12V - 12.8V",
+        "Dung lượng lưu trữ điện": "1200Wh (100Ah)",
+        "Loại mạch tích hợp": "Mạch Smart BMS cân bằng 100A thông minh"
+      },
+      reviews: []
+    }
+  ];
 
   let orders: any[] = [];
   let consultations: any[] = [];
@@ -56,7 +370,7 @@ const PORT = 3000;
 
   const isVercelEnvironment = process.env.VERCEL === "1";
   
-  let activeProducts: any[] = (isProduction || isVercelEnvironment) ? [] : [...products];
+  let activeProducts: any[] = [...products];
   try {
     if (fs.existsSync(dbPath)) {
       const dbContent = fs.readFileSync(dbPath, "utf-8");
@@ -228,23 +542,13 @@ const PORT = 3000;
             console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
             saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
           }
-          productsLoaded = true;
         } else {
-          if (activeProducts.length > 0) {
-            console.warn("Firestore product fetch failed or timed out. Falling back to memory/disk cache.");
-            productsLoaded = true;
-          } else {
-            throw new Error("Không thể tải danh sách sản phẩm từ Firestore (Hết hạn ngạch/Timeout) và không có dữ liệu sao lưu cục bộ.");
-          }
+          console.warn("Firestore product fetch failed or timed out. Falling back to memory/disk/seed cache.");
         }
       } catch (err: any) {
         console.error("On-demand product fetch failed. Falling back to local data.", err);
-        if (activeProducts.length > 0) {
-          productsLoaded = true; // Set to true on error so we fallback to local memory
-        } else {
-          throw err; // Rethrow to let the endpoint fail with 500
-        }
       } finally {
+        productsLoaded = true;
         productsLoadPromise = null;
       }
     })();
@@ -274,23 +578,13 @@ const PORT = 3000;
             console.log(`On-demand loaded ${orders.length} orders from Firestore.`);
             saveLocalBackupSafely(ordersDbPath, JSON.stringify(orders, null, 2));
           }
-          ordersLoaded = true;
         } else {
-          if (orders.length > 0) {
-            console.warn("Firestore orders fetch failed or timed out. Falling back to memory/disk cache.");
-            ordersLoaded = true;
-          } else {
-            throw new Error("Không thể tải danh sách đơn hàng từ Firestore và không có dữ liệu cục bộ.");
-          }
+          console.warn("Firestore orders fetch failed or timed out. Falling back to memory/disk cache.");
         }
       } catch (err: any) {
         console.error("On-demand orders fetch failed. Falling back to local data.", err);
-        if (orders.length > 0) {
-          ordersLoaded = true; // Set to true on error to fallback to local memory
-        } else {
-          throw err;
-        }
       } finally {
+        ordersLoaded = true;
         ordersLoadPromise = null;
       }
     })();
@@ -320,23 +614,13 @@ const PORT = 3000;
             console.log(`On-demand loaded ${consultations.length} consultations from Firestore.`);
             saveLocalBackupSafely(consultationsDbPath, JSON.stringify(consultations, null, 2));
           }
-          consultationsLoaded = true;
         } else {
-          if (consultations.length > 0) {
-            console.warn("Firestore consultations fetch failed or timed out. Falling back to memory/disk cache.");
-            consultationsLoaded = true;
-          } else {
-            throw new Error("Không thể tải danh sách yêu cầu tư vấn từ Firestore và không có dữ liệu cục bộ.");
-          }
+          console.warn("Firestore consultations fetch failed or timed out. Falling back to memory/disk cache.");
         }
       } catch (err: any) {
         console.error("On-demand consultations fetch failed. Falling back to local data.", err);
-        if (consultations.length > 0) {
-          consultationsLoaded = true; // Set to true on error to fallback to local memory
-        } else {
-          throw err;
-        }
       } finally {
+        consultationsLoaded = true;
         consultationsLoadPromise = null;
       }
     })();
@@ -368,23 +652,13 @@ const PORT = 3000;
             console.log("On-demand loaded visitor counter stats:", visitorStats);
             saveLocalBackupSafely(counterDbPath, JSON.stringify(visitorStats, null, 2));
           }
-          visitorStatsLoaded = true;
         } else {
-          if (visitorStats.total > 0) {
-            console.warn("Firestore visitor stats fetch failed or timed out. Falling back to memory/disk cache.");
-            visitorStatsLoaded = true;
-          } else {
-            throw new Error("Không thể tải thông tin thống kê truy cập từ Firestore.");
-          }
+          console.warn("Firestore visitor stats fetch failed or timed out. Falling back to memory/disk cache.");
         }
       } catch (err: any) {
         console.error("On-demand visitor stats fetch failed. Falling back to local data.", err);
-        if (visitorStats.total > 0) {
-          visitorStatsLoaded = true; // Set to true on error to fallback to local memory
-        } else {
-          throw err;
-        }
       } finally {
+        visitorStatsLoaded = true;
         visitorStatsLoadPromise = null;
       }
     })();
