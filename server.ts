@@ -231,7 +231,8 @@ const PORT = 3000;
         }
         productsLoaded = true;
       } catch (err) {
-        console.error("On-demand product fetch failed:", err);
+        console.error("On-demand product fetch failed. Falling back to local data.", err);
+        productsLoaded = true; // Set to true on error so we fallback to local memory in subsequent requests
       } finally {
         productsLoadPromise = null;
       }
@@ -265,7 +266,8 @@ const PORT = 3000;
         }
         ordersLoaded = true;
       } catch (err) {
-        console.error("On-demand orders fetch failed:", err);
+        console.error("On-demand orders fetch failed. Falling back to local data.", err);
+        ordersLoaded = true; // Set to true on error to fallback to local memory
       } finally {
         ordersLoadPromise = null;
       }
@@ -299,7 +301,8 @@ const PORT = 3000;
         }
         consultationsLoaded = true;
       } catch (err) {
-        console.error("On-demand consultations fetch failed:", err);
+        console.error("On-demand consultations fetch failed. Falling back to local data.", err);
+        consultationsLoaded = true; // Set to true on error to fallback to local memory
       } finally {
         consultationsLoadPromise = null;
       }
@@ -335,7 +338,8 @@ const PORT = 3000;
         }
         visitorStatsLoaded = true;
       } catch (err) {
-        console.error("On-demand visitor stats fetch failed:", err);
+        console.error("On-demand visitor stats fetch failed. Falling back to local data.", err);
+        visitorStatsLoaded = true; // Set to true on error to fallback to local memory
       } finally {
         visitorStatsLoadPromise = null;
       }
