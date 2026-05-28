@@ -942,9 +942,17 @@ const PORT = 3000;
     console.error("Failed to load local products backup:", err);
   }
 
-  // Đảm bảo không bao giờ rỗng: nếu chưa có file backup hoặc file bị lỗi, dùng danh sách sản phẩm mẫu làm mồi
-  if (activeProducts.length === 0) {
-    activeProducts = [...products];
+  const demoSkus = new Set(products.map((p: any) => String(p.sku || p.id || "").trim().toLowerCase()));
+
+  // Phân biệt môi trường:
+  if (process.env.NODE_ENV === "production") {
+    // Trong môi trường production (Web Online), BẮT BUỘC loại bỏ hoàn toàn 100% dữ liệu demo khỏi activeProducts
+    activeProducts = activeProducts.filter(p => p && !demoSkus.has(String(p.sku || p.id || "").trim().toLowerCase()));
+  } else {
+    // Ở môi trường phát triển (development), nếu danh sách sản phẩm rỗng, cho phép dùng dữ liệu demo làm mồi
+    if (activeProducts.length === 0) {
+      activeProducts = [...products];
+    }
   }
 
   // Biến toàn cục giúp theo dõi trạng thái Firestore bị quá hạn mức đọc (Quota Limit Exceeded) hoặc lỗi timeout liên tiếp
@@ -1097,7 +1105,11 @@ const PORT = 3000;
           firestoreProducts.push(d.data());
         });
         if (firestoreProducts.length > 0) {
-          activeProducts = firestoreProducts;
+          if (process.env.NODE_ENV === "production") {
+            activeProducts = firestoreProducts.filter(p => p && !demoSkus.has(String(p.sku || p.id || "").trim().toLowerCase()));
+          } else {
+            activeProducts = firestoreProducts;
+          }
           console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
           // Cập nhật backup ngoại tuyến
           saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
@@ -1252,18 +1264,28 @@ const PORT = 3000;
         });
 
         if (firestoreProducts.length > 0) {
-          activeProducts = firestoreProducts;
+          if (process.env.NODE_ENV === "production") {
+            activeProducts = firestoreProducts.filter(p => p && !demoSkus.has(String(p.sku || p.id || "").trim().toLowerCase()));
+          } else {
+            activeProducts = firestoreProducts;
+          }
           console.log(`Synced products from Firestore: Loaded ${activeProducts.length} items.`);
           // Write backup to disk safely
           saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
         } else {
-          console.log("Firestore 'products' collection is empty. Seeding with current list in parallel...");
-          const seedPromises = activeProducts.map((item) => {
-            const itemDocRef = doc(db, "products", String(item.id || item.sku));
-            return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
-          });
-          await withTimeout(Promise.all(seedPromises), 1500, null);
-          console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
+          if (process.env.NODE_ENV !== "production") {
+            console.log("Firestore 'products' collection is empty. Seeding with current list in parallel...");
+            const seedPromises = activeProducts.map((item) => {
+              const itemDocRef = doc(db, "products", String(item.id || item.sku));
+              return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
+            });
+            await withTimeout(Promise.all(seedPromises), 1500, null);
+            console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
+          } else {
+            console.log("Firestore 'products' collection is empty. In production, skipping seeding of demo products.");
+            activeProducts = [];
+            saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
+          }
         }
       } else {
         console.warn("Products sync from Firestore timed out. Falling back to local workspace memory database.");
@@ -1385,9 +1407,11 @@ const PORT = 3000;
         await ensureProductsLoaded();
       }
       
-      // Luôn trả về danh sách sản phẩm activeProducts đầy đủ để đảm bảo tính nhất quán của dữ liệu
-      // giữa môi trường phát triển (Preview) và môi trường thực tế (Shared/Production).
-      res.json(activeProducts);
+      let responseProducts = activeProducts;
+      if (process.env.NODE_ENV === "production") {
+        responseProducts = activeProducts.filter(p => p && !demoSkus.has(String(p.sku || p.id || "").trim().toLowerCase()));
+      }
+      res.json(responseProducts);
     } catch (err: any) {
       console.error("Error in GET /api/products:", err);
       res.status(500).json({ success: false, message: err.message });
