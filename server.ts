@@ -40,7 +40,7 @@ const PORT = 3000;
       price: 15000,
       originalPrice: 20000,
       discount: 25,
-      image: "https://plus.unsplash.com/premium_photo-1678116175513-ea5532d8471b?w=500&q=80",
+      picture: "https://plus.unsplash.com/premium_photo-1678116175513-ea5532d8471b?w=500&q=80",
       description: "Bét phun mưa chất lượng cao, độ phủ rộng, tiết kiệm nước.",
       specs: { "Bán kính": "3m-5m", "Lưu lượng": "150-250 l/h", "Áp suất": "1.5-3.0 bar" },
       reviews: []
@@ -54,7 +54,7 @@ const PORT = 3000;
       price: 25000,
       originalPrice: 30000,
       discount: 16,
-      image: "https://images.unsplash.com/photo-1596430349503-4552e185e9ea?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1596430349503-4552e185e9ea?w=500&q=80",
       description: "Đầu tưới bù áp giúp lưu lượng nước đồng đều trên mọi địa hình.",
       specs: { "Bán kính": "4m-7m", "Lưu lượng": "95 l/h Constant", "Tự làm sạch": "Có" },
       reviews: []
@@ -66,7 +66,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 2000,
-      image: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
       description: "Đầu nhỏ giọt có thể điều chỉnh lưu lượng, phù hợp tưới gốc cây.",
       specs: { "Điều chỉnh": "0-70 l/h", "Chân cắm": "6mm", "Góc phun": "8 tia" },
       reviews: []
@@ -79,7 +79,7 @@ const PORT = 3000;
       group: "Thiết bị tưới",
       price: 1200,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=500&q=80",
       description: "Dây tưới dẹt khoảng cách lỗ 20cm, tiết kiệm nước tối đa.",
       specs: { "Đường kính": "16mm", "Độ dày": "0.2mm", "Khoảng cách lỗ": "20cm" },
       reviews: []
@@ -93,7 +93,7 @@ const PORT = 3000;
       price: 450000,
       originalPrice: 550000,
       discount: 18,
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
       description: "Van điều khiển tự động dùng cho hệ thống tưới hẹn giờ.",
       specs: { "Điện áp": "24VAC", "Kích thước": "Phi 34", "Thương hiệu": "Hunter" },
       reviews: []
@@ -105,7 +105,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 650000,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Lọc sạch rác và cặn bẩn, bảo vệ hệ thống đầu tưới nhỏ giọt.",
       specs: { "Kích thước": "Phi 60", "Lưu lượng": "25m3/h", "Độ lọc": "120 mesh" },
       reviews: []
@@ -117,7 +117,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 550000,
-      image: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?w=500&q=80",
       description: "Thiết bị hẹn giờ thông minh cho sân vườn mini.",
       specs: { "Nguồn": "2 pin AA", "Số lần tưới": "Tối đa 8 lần/ngày", "Chống nước": "IP54" },
       reviews: []
@@ -129,7 +129,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 1850000,
-      image: "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=500&q=80",
       description: "Súng phun bán kính lớn dùng cho cánh đồng lớn hoặc sân vận động.",
       specs: { "Bán kính": "25m-35m", "Lưu lượng": "15-25m3/h", "Chất liệu": "Hợp kim kẽm" },
       reviews: []
@@ -142,7 +142,7 @@ const PORT = 3000;
       group: "Thiết bị tưới",
       price: 8500,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
       description: "Ống dẫn nhánh dẻo dai, dễ bục lỗ gắn đầu tưới.",
       specs: { "Đường kính": "16mm", "Độ dày": "1.2mm", "Áp suất": "4 bar" },
       reviews: []
@@ -154,7 +154,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 180000,
-      image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
       description: "Tự động châm phân bón vào hệ thống tưới bằng áp lực nước.",
       specs: { "Kích thước": "Phi 34", "Tỉ lệ": "Điều chỉnh được", "Chất liệu": "Nhựa PVC" },
       reviews: []
@@ -166,7 +166,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 12000,
-      image: "https://images.unsplash.com/photo-1596430349503-4552e185e9ea?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1596430349503-4552e185e9ea?w=500&q=80",
       description: "Tạo màn sương mịn, làm mát nhà màng hoặc tưới lan.",
       specs: { "Góc phun": "360 độ (4 hướng)", "Hạt sương": "Siêu mịn", "Áp suất": "2-4 bar" },
       reviews: []
@@ -178,7 +178,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 5000,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Phụ kiện kết nối ống LDPE nhanh chóng không cần keo.",
       specs: { "Kích thước": "16mm", "Kiểu": "Nối thẳng", "Chống rò rỉ": "Có" },
       reviews: []
@@ -190,7 +190,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 18000,
-      image: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
       description: "Lắp đặt treo trên cao, phun đều cho vườn ươm.",
       specs: { "Lưu lượng": "35 l/h", "Chống nhỏ giọt": "Có rơ-le", "Chất liệu": "Nhựa kỹ thuật" },
       reviews: []
@@ -202,7 +202,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 8000,
-      image: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
       description: "Cố định đầu tưới tại các gốc cây ăn trái.",
       specs: { "Chiều dài": "45cm", "Chất liệu": "Sợi thủy tinh/Nhựa", "Độ bền": "10 năm" },
       reviews: []
@@ -214,7 +214,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Thiết bị tưới",
       price: 3500,
-      image: "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=500&q=80",
       description: "Đảm bảo cung cấp đúng 4 lít nước mỗi giờ cho cây trồng.",
       specs: { "Lưu lượng": "4 l/h", "Bù áp": "Có", "Áp suất hoạt động": "0.5-4.0 bar" },
       reviews: []
@@ -230,7 +230,7 @@ const PORT = 3000;
       price: 125000,
       originalPrice: 150000,
       discount: 15,
-      image: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
       description: "Thiết bị bảo vệ an toàn điện cho hệ thống tưới.",
       specs: { "Dòng định mức": "16A", "Số cực": "1P", "Khả năng ngắt": "6kA" },
       reviews: []
@@ -242,7 +242,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 1200000,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
       description: "Máy bơm mạnh mẽ cho vườn cây ăn trái quy mô vừa.",
       specs: { "Công suất": "750W", "Đẩy cao": "30m", "Lưu lượng": "5m3/h" },
       reviews: []
@@ -254,7 +254,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 380000,
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
       description: "Contactor điều khiển động cơ máy bơm công suất lớn.",
       specs: { "Dòng tải": "18A", "Số cực": "3P", "Cuộn coil": "220V" },
       reviews: []
@@ -266,7 +266,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 185000,
-      image: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?w=500&q=80",
       description: "Hẹn giờ bật tắt máy bơm theo chu kỳ hàng ngày.",
       specs: { "Kiểu": "Digital", "Tổng công suất": "3000W", "Bước nhảy": "1 phút" },
       reviews: []
@@ -278,7 +278,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 220000,
-      image: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
       description: "Vỏ tủ bảo vệ các thiết bị điện khỏi mưa nắng xâm nhập.",
       specs: { "Chất liệu": "Nhựa ABS", "Tiêu chuẩn": "IP65", "Kích thước": "300x200x150mm" },
       reviews: []
@@ -291,7 +291,7 @@ const PORT = 3000;
       group: "Đồ điện",
       price: 18500,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
       description: "Dây cáp đồng nguyên chất đảm bảo tải điện ổn định.",
       specs: { "Tiết diện": "2.5mm2", "Lõi": "Đồng", "Vỏ": "PVC/PVC" },
       reviews: []
@@ -303,7 +303,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 280000,
-      image: "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=500&q=80",
       description: "Chiếu sáng an ninh và khu vực sản xuất trang trại.",
       specs: { "Công suất": "50W", "Ánh sáng": "Trắng/Vàng", "Chống nước": "IP66" },
       reviews: []
@@ -315,7 +315,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 450000,
-      image: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
       description: "Bảo vệ an toàn tính mạng khi có sự cố rò rỉ điện.",
       specs: { "Dòng rò": "30mA", "Dòng tải": "32A", "Thương hiệu": "Panasonic" },
       reviews: []
@@ -327,7 +327,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 95000,
-      image: "https://images.unsplash.com/photo-1596430349503-4552e185e9ea?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1596430349503-4552e185e9ea?w=500&q=80",
       description: "Điều khiển mực nước bồn chứa, tự động bật tắt bơm.",
       specs: { "Kiểu": "Phao kép", "Điện áp": "250V", "Ứng dụng": "Bể chứa/Bể ngầm" },
       reviews: []
@@ -339,7 +339,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 45000,
-      image: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?w=500&q=80",
       description: "Ngắt điện toàn hệ thống ngay lập tức khi gặp sự cố.",
       specs: { "Màu sắc": "Đỏ", "Kiểu nhấn": "Giữ (Xoay để mở)", "Chân tiếp điểm": "1NO 1NC" },
       reviews: []
@@ -353,7 +353,7 @@ const PORT = 3000;
       price: 3200000,
       originalPrice: 3800000,
       discount: 15,
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
       description: "Tiết kiệm điện và bảo vệ động cơ khởi động mềm.",
       specs: { "Công suất": "1.5kW (2HP)", "Nguồn vào": "1 Phase 220V", "Đầu ra": "3 Phase 220V" },
       reviews: []
@@ -365,7 +365,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 1250000,
-      image: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
       description: "Kết nối hệ thống PLC/IOT để điều khiển tưới thông minh.",
       specs: { "Đo đạc": "Độ ẩm + Nhiệt độ", "Giao diện": "Modbus RS485", "Cấp bảo vệ": "IP68" },
       reviews: []
@@ -377,7 +377,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 1850000,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
       description: "Thông thoáng khí cho nhà màng, trang trại chăn nuôi.",
       specs: { "Kích thước": "400x400mm", "Lưu lượng": "8000m3/h", "Điện áp": "220V" },
       reviews: []
@@ -389,7 +389,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 85000,
-      image: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=500&q=80",
       description: "Ổ cắm chịu tải lớn, chống va đập và chống nước nhẹ.",
       specs: { "Dòng tối đa": "16A", "Tiêu chuẩn": "IP44", "Màu sắc": "Xanh dương" },
       reviews: []
@@ -401,7 +401,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đồ điện",
       price: 195000,
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
       description: "Tự động ngắt khi động cơ máy bơm quá tải.",
       specs: { "Dải cài đặt": "9A-13A", "Dùng cho": "Contactor MC-18b", "Hãng": "LS" },
       reviews: []
@@ -416,7 +416,7 @@ const PORT = 3000;
       group: "Vật tư nước",
       price: 25000,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
       description: "Ống HDPE bển bỉ, chịu áp lực tốt.",
       specs: { "Đường kính": "20mm", "Độ dày": "2.0mm", "Áp suất": "PN10" },
       reviews: []
@@ -429,7 +429,7 @@ const PORT = 3000;
       group: "Vật tư nước",
       price: 18000,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
       description: "Ống nhựa PVC chất lượng cao cho hệ thống cấp thoát nước.",
       specs: { "Đường kính": "27mm", "Độ dày": "2.2mm", "Thương hiệu": "Tiền Phong" },
       reviews: []
@@ -441,7 +441,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 35000,
-      image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
       description: "Van khóa nước chắc chắn, tay gạt nhẹ nhàng.",
       specs: { "Kích thước": "Phi 34", "Kiểu": "Dán keo", "Chống tia UV": "Có" },
       reviews: []
@@ -453,7 +453,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 3000,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Phụ kiện chia 3 đường ống nước PVC.",
       specs: { "Kích thước": "Phi 21", "Góc": "90 độ", "Thương hiệu": "Bình Minh" },
       reviews: []
@@ -465,7 +465,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 2500,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Phụ kiện bẻ góc 90 độ cho ống PVC.",
       specs: { "Kích thước": "Phi 21", "Màu sắc": "Xám", "Chất liệu": "uPVC" },
       reviews: []
@@ -477,7 +477,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 2000,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Phụ kiện kết nối 2 đầu ống cùng kích thước.",
       specs: { "Kích thước": "Phi 21", "Kiểu": "Nối trơn", "Chịu lực": "Có" },
       reviews: []
@@ -489,7 +489,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 25000,
-      image: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
       description: "Keo dán chuyên dụng liên kết các mối nối PVC cực kỳ chắc chắn.",
       specs: { "Trọng lượng": "100g/hộp", "Thời gian khô": "2-5 phút", "An toàn": "Đạt chuẩn" },
       reviews: []
@@ -501,7 +501,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 5000,
-      image: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
       description: "Chống rò rỉ tại các đầu ren của phụ kiện nước.",
       specs: { "Độ dài": "10m", "Chiều rộng": "12mm", "Chất liệu": "PTFE" },
       reviews: []
@@ -514,7 +514,7 @@ const PORT = 3000;
       group: "Vật tư nước",
       price: 15000,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
       description: "Ống luồn dây cáp điện hoặc dẫn nước gầm đất.",
       specs: { "Đường kính": "32/42 mm", "Kiểu": "Ống xoắn", "Chất liệu": "HDPE" },
       reviews: []
@@ -526,7 +526,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 115000,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
       description: "Ngăn rác và giữ nước trong ống hút của máy bơm.",
       specs: { "Kích thước": "Phi 60", "Màu sắc": "Đen", "Kiểu": "Lưới nhựa" },
       reviews: []
@@ -538,7 +538,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 1850000,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Bồn chứa nước sạch cho gia đình và sản xuất.",
       specs: { "Dung tích": "1000 Lít", "Kiểu dáng": "Đứng", "Bảo hành": "10 năm" },
       reviews: []
@@ -550,7 +550,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 4500,
-      image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=500&q=80",
       description: "Phụ kiện chuyển đổi từ ống lớn xuống ống nhỏ.",
       specs: { "Đầu lớn": "Phi 27", "Đầu nhỏ": "Phi 21", "Màu": "Xám" },
       reviews: []
@@ -562,7 +562,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 28000,
-      image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
       description: "Giúp tháo lắp bảo trì đường ống dễ dàng không cần cắt ống.",
       specs: { "Kích thước": "Phi 34", "Kiểu": "Dán keo", "Gioăng cao su": "Có" },
       reviews: []
@@ -574,7 +574,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Vật tư nước",
       price: 155000,
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&q=80",
       description: "Chỉ cho nước chảy theo một chiều, bảo vệ thiết bị đo.",
       specs: { "Kích thước": "Phi 49", "Cấu tạo": "Lá lật nhựa", "Áp suất": "PN10" },
       reviews: []
@@ -587,7 +587,7 @@ const PORT = 3000;
       group: "Vật tư nước",
       price: 12000,
       unit: "mét",
-      image: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
       description: "Dây dẫn nước dẻo, bền chắc cho sân vườn.",
       specs: { "Đường kính": "Phi 16", "Cấu tạo": "3 lớp nhựa + sợi", "Chống xoắn": "Có" },
       reviews: []
@@ -601,7 +601,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 850000,
-      image: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
       description: "Dụng cụ chuyên nghiệp dùng trong bảo trì trang trại.",
       specs: { "Lực bấm": "8 tấn", "Phạm vi": "4-70 mm2", "Trọng lượng": "3kg" },
       reviews: []
@@ -613,7 +613,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 650000,
-      image: "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=500&q=80",
       description: "Hỗ trợ cắt tỉa cành ở độ cao an toàn từ mặt đất.",
       specs: { "Chiều dài": "Thu gọn 1.8m - Ép dài 3.0m", "Lưỡi": "Thép SK5 Nhật", "Kiểu": "Bóp tay" },
       reviews: []
@@ -625,7 +625,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 135000,
-      image: "https://images.unsplash.com/photo-1516211697506-8360bd7704b2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1516211697506-8360bd7704b2?w=500&q=80",
       description: "Dễ dàng mang theo khi đi vườn, lưỡi cưa sắc bén.",
       specs: { "Chiều dài lưỡi": "210mm", "Tay cầm": "Cao su chống trượt", "Gấp gọn": "Có" },
       reviews: []
@@ -637,7 +637,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 185000,
-      image: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&q=80",
       description: "Dụng cụ đào xới, làm cỏ hiệu quả cho đất cứng.",
       specs: { "Chất liệu": "Thép nhíp xe", "Chiều dài cán": "1.2m", "Trọng lượng": "1.5kg" },
       reviews: []
@@ -649,7 +649,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 95000,
-      image: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
       description: "Xẻng nhỏ gọn, không gỉ, bền đẹp theo thời gian.",
       specs: { "Chất liệu": "Inox 304", "Kiểu": "Xẻng mũi nhọn", "Chiều dài": "30cm" },
       reviews: []
@@ -661,7 +661,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 1450000,
-      image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
       description: "Phun thuốc bảo vệ thực vật nhanh chóng, không mỏi tay.",
       specs: { "Dung tích": "20 Lít", "Ắc quy": "12V-8Ah", "Thời gian": "4-6 giờ/lần sạc" },
       reviews: []
@@ -673,7 +673,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 245000,
-      image: "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=500&q=80",
       description: "Tạo hình cây cảnh và cắt tỉa thảm cỏ chuyên nghiệp.",
       specs: { "Chiều dài": "60cm", "Lưỡi": "Thép tôi cao tần", "Tay cầm": "Hợp kim nhôm" },
       reviews: []
@@ -685,7 +685,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 65000,
-      image: "https://images.unsplash.com/photo-1516211697506-8360bd7704b2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1516211697506-8360bd7704b2?w=500&q=80",
       description: "Lưỡi dao cực mỏng và sắc, giúp vết ghép nhanh liền.",
       specs: { "Chất liệu": "Thép carbon", "Cán": "Gỗ tự nhiên", "Độ sắc": "Như dao cạo" },
       reviews: []
@@ -698,7 +698,7 @@ const PORT = 3000;
       group: "Dụng cụ làm vườn",
       price: 25000,
       unit: "cuộn",
-      image: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
       description: "Cố định cành ghép, tự phân hủy sau khi mối ghép liền.",
       specs: { "Chiều rộng": "2cm", "Chiều dài": "100m", "Chất liệu": "Nhựa sinh học PE" },
       reviews: []
@@ -710,7 +710,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 4850000,
-      image: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&q=80",
       description: "Máy cắt cỏ chạy pin êm ái, cơ động cho khuôn viên rộng.",
       specs: { "Nguồn": "Pin 18V LXT", "Chiều rộng cắt": "230mm", "Trọng lượng": "2.8kg" },
       reviews: []
@@ -722,7 +722,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 55000,
-      image: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1530124560676-4fbc91abc6f2?w=500&q=80",
       description: "Công cụ nhỏ gọn cho chậu hoa và vườn ban công.",
       specs: { "Gồm": "Bay, Cào, Xới", "Chất liệu": "Thép sơn tĩnh điện", "Tay cầm": "Gỗ" },
       reviews: []
@@ -734,7 +734,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 35000,
-      image: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1594498257602-ebb1109a15f0?w=500&q=80",
       description: "Rổ thưa giúp thông thoáng trái cây khi vận chuyển.",
       specs: { "Kích thước": "40x30x15cm", "Chất liệu": "Nhựa HDPE tái sinh", "Màu": "Đỏ/Vàng" },
       reviews: []
@@ -746,7 +746,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 1250000,
-      image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=500&q=80",
       description: "Vận chuyển phân bón, đất đá trong trang trại dễ dàng.",
       specs: { "Thùng": "Tôn dày 1.2mm", "Bánh": "Hơi 4.00-8", "Tải trọng": "150kg" },
       reviews: []
@@ -759,7 +759,7 @@ const PORT = 3000;
       group: "Dụng cụ làm vườn",
       price: 12500,
       unit: "mét vuông",
-      image: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
       description: "Bảo vệ cây trồng khỏi nắng gắt, bền bỉ trên 5 năm.",
       specs: { "Độ che": "70%", "Màu sắc": "Đen/Xanh", "Khổ rộng": "2m/3m" },
       reviews: []
@@ -771,7 +771,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Dụng cụ làm vườn",
       price: 12000,
-      image: "https://images.unsplash.com/photo-1516211697506-8360bd7704b2?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1516211697506-8360bd7704b2?w=500&q=80",
       description: "Ươm mầm rau màu, hoa kiểng chuyên nghiệp.",
       specs: { "Số lỗ": "104", "Chất liệu": "Nhựa PVC mỏng", "Tái sử dụng": "2-3 lần" },
       reviews: []
@@ -787,7 +787,7 @@ const PORT = 3000;
       price: 1350000,
       originalPrice: 1650000,
       discount: 18,
-      image: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
       description: "Camera wifi thông minh ngoài trời, độ phân giải 2K sắc nét.",
       specs: { "Độ phân giải": "2K", "Chống nước": "IP67", "Tầm nhìn đêm": "30m" },
       reviews: []
@@ -799,7 +799,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Camera An Ninh",
       price: 850000,
-      image: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=500&q=80",
       description: "Công nghệ ColorVu cho hình ảnh màu sắc sống động 24/7.",
       specs: { "Độ phân giải": "Full HD", "Công nghệ": "ColorVu", "Vỏ": "Kim loại" },
       reviews: []
@@ -813,7 +813,7 @@ const PORT = 3000;
       price: 550000,
       originalPrice: 750000,
       discount: 26,
-      image: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
       description: "Camera theo dõi chuyển động, đàm thoại 2 chiều.",
       specs: { "Góc xoay": "355 độ", "Báo động": "Còi hú", "Lưu trữ": "Thẻ nhớ/Cloud" },
       reviews: []
@@ -827,7 +827,7 @@ const PORT = 3000;
       price: 320000,
       originalPrice: 450000,
       discount: 29,
-      image: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
       description: "Camera Yoosee kết nối 3 râu bắt sóng cực mạnh, hồng ngoại ban đêm rõ nét.",
       specs: { "Kết nối": "Wifi / 3 Râu", "Góc xoay": "360 độ", "Thẻ nhớ": "Hỗ trợ tối đa 128GB" },
       reviews: []
@@ -841,7 +841,7 @@ const PORT = 3000;
       price: 890000,
       originalPrice: 1200000,
       discount: 25,
-      image: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
       description: "Camera ngoài trời sử dụng Sim 4G, không cần wifi, cắm là chạy, phù hợp trang trại rộng.",
       specs: { "Mạng di động": "Sim 4G LTE", "Chống nước": "IP66", "Đuôi": "IP66" },
       reviews: []
@@ -855,7 +855,7 @@ const PORT = 3000;
       price: 2450000,
       originalPrice: 2990000,
       discount: 18,
-      image: "https://images.unsplash.com/photo-1509391366360-fe5bb58583bb?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1509391366360-fe5bb58583bb?w=500&q=80",
       description: "Camera giám sát năng lượng mặt trời tích hợp Sim 4G. Tự sạc bằng pin quang điện tấm lớn, không cần kéo dây nguồn và dây mạng.",
       specs: { "Nguồn điện": "Tấm pin Solar rời", "Kết nối": "Sim 4G LTE", "Dung lượng pin": "12000mAh" },
       reviews: []
@@ -869,7 +869,7 @@ const PORT = 3000;
       price: 1950000,
       originalPrice: 2400000,
       discount: 18,
-      image: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1557862921-37829c790f19?w=500&q=80",
       description: "Camera Imou cao cấp chạy pin sạc kết hợp tấm pin năng lượng mặt trời nhỏ gọn, bắt sóng wifi bển bỉ.",
       specs: { "Hãng": "IMOU", "Nguồn điện": "Pin sạc + Tấm Solar rời", "Kết nối": "Wifi 2.4Ghz & 5Ghz" },
       reviews: []
@@ -885,7 +885,7 @@ const PORT = 3000;
       price: 1850000,
       originalPrice: 2250000,
       discount: 17,
-      image: "https://images.unsplash.com/photo-1509391366360-fe5bb58583bb?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1509391366360-fe5bb58583bb?w=500&q=80",
       description: "Đèn đường công suất cao, tấm pin tách rời hiệu suất lớn.",
       specs: { "Công suất": "300W", "Pin": "Lithium LiFePO4", "Thời gian sáng": "12-15h" },
       reviews: []
@@ -897,7 +897,7 @@ const PORT = 3000;
       category: "Danh mục sản phẩm",
       group: "Đèn năng lượng mặt trời",
       price: 950000,
-      image: "https://images.unsplash.com/photo-1509391366360-fe5bb58583bb?w=500&q=80",
+      picture: "https://images.unsplash.com/photo-1509391366360-fe5bb58583bb?w=500&q=80",
       description: "Đèn pha chiếu sân vườn, tiết kiệm điện năng hoàn toàn.",
       specs: { "Công suất": "100W", "Tiêu chuẩn": "IP67", "Điều khiển": "Remote" },
       reviews: []
@@ -1486,6 +1486,14 @@ const PORT = 3000;
   }
 
   // API Routes
+  app.get("/api/firebase-config", (req, res) => {
+    if (firebaseConfig) {
+      res.json({ success: true, config: firebaseConfig });
+    } else {
+      res.status(500).json({ success: false, message: "Firebase is not configured on the server." });
+    }
+  });
+
   app.get("/api/products", async (req, res) => {
     try {
       const forceRefresh = req.query.refresh === "true";
@@ -1667,7 +1675,7 @@ const PORT = 3000;
       if (!productsLoaded) {
         await ensureProductsLoaded();
       }
-      const { sku, manufacturerCode, name, category, group, subcategoryId, subcategoryName, price, originalPrice, discount, image, images, description, unit, specs } = req.body;
+      const { sku, manufacturerCode, name, category, group, subcategoryId, subcategoryName, price, originalPrice, discount, picture, pictures, description, unit, specs } = req.body;
       
       if (!sku || !sku.trim()) {
         return res.status(400).json({ success: false, message: "Mã SKU không được trống!" });
@@ -1691,9 +1699,9 @@ const PORT = 3000;
       const parsedOriginalPrice = originalPrice ? parseFloat(originalPrice) : undefined;
       const parsedDiscount = discount ? parseFloat(discount) : undefined;
 
-      const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
-      const finalImage = image || (images && images.length > 0 ? images[0] : fallbackImage);
-      const finalImages = Array.isArray(images) && images.length > 0 ? images : [finalImage];
+      const fallbackPicture = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
+      const finalPicture = picture || (pictures && pictures.length > 0 ? pictures[0] : fallbackPicture);
+      const finalPictures = Array.isArray(pictures) && pictures.length > 0 ? pictures : [finalPicture];
 
       const newProduct = {
         id: idx !== -1 ? activeProducts[idx].id : `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -1707,8 +1715,8 @@ const PORT = 3000;
         price: parsedPrice,
         originalPrice: parsedOriginalPrice,
         discount: parsedDiscount,
-        image: finalImage,
-        images: finalImages,
+        picture: finalPicture,
+        pictures: finalPictures,
         description: description || "",
         unit: unit ? String(unit).trim() : "Bộ",
         specs: specs || {},

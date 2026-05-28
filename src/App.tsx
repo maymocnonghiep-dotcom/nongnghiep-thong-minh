@@ -586,27 +586,27 @@ export default function App() {
                       title:
                         "Hướng dẫn lắp đặt hệ thống tưới nhỏ giọt cho dưa lưới",
                       date: "15/05/2024",
-                      image:
+                      picture:
                         "https://images.unsplash.com/photo-1590644365607-1c5a919aa435?w=500&q=80",
                     },
                     {
                       title: "Top 5 bét phun mưa hiệu quả nhất cho cây ăn trái",
                       date: "12/05/2024",
-                      image:
+                      picture:
                         "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=500&q=80",
                     },
                     {
                       title:
                         "Cách lựa chọn máy bơm nước phù hợp với quy mô trang trại",
                       date: "08/05/2024",
-                      image:
+                      picture:
                         "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80",
                     },
                   ].map((post, i) => (
                     <div key={i} className="group cursor-pointer">
                       <div className="aspect-video rounded-xl overflow-hidden mb-4">
                         <img
-                          src={post.image}
+                          src={post.picture}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>

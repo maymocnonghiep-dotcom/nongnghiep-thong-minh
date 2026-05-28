@@ -44,7 +44,7 @@ export default function Promotions() {
               className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 flex flex-col md:flex-row h-full group"
             >
               <div className="w-full md:w-2/5 relative h-64 md:h-auto overflow-hidden">
-                <img src={promo.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img loading="lazy" src={promo.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <span className="absolute top-4 left-4 bg-brand-accent text-white font-bold text-xs px-3 py-1 rounded-full shadow-lg antialiased">
                   {promo.tag}
                 </span>

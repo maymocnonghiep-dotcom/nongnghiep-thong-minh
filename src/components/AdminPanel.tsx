@@ -4,7 +4,8 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
 import { subcategoriesMap } from '../categoriesData';
-import { compressImage, getApiUrl, safeLocalStorage } from '../utils';
+import { getApiUrl, safeLocalStorage } from '../utils';
+import { uploadImageToFirebase } from '../firebase-client';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -110,43 +111,11 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const uploadImageToServer = async (file: File): Promise<string> => {
     setIsUploadingImage(true);
     try {
-      let base64Data = '';
-      try {
-        base64Data = await compressImage(file, 800, 800, 0.75);
-      } catch (err) {
-        console.error('Lỗi khi nén ảnh, chuyển sang đọc bằng FileReader trực tiếp:', err);
-        base64Data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              resolve(reader.result);
-            } else {
-              reject(new Error('Không thể đọc file dưới dạng Base64'));
-            }
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      const response = await fetch(getApiUrl('/api/admin/upload-image'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          base64Data,
-          filename: file.name,
-          contentType: file.type
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Lỗi tải ảnh lên Storage');
-      }
-
-      return data.url;
+      // Dùng SDK Firebase Storage trực tiếp tải file thô thay vì ép sáng Base64
+      const url = await uploadImageToFirebase(file);
+      return url;
+    } catch (err: any) {
+      throw new Error(err.message || 'Lỗi tải ảnh lên Storage');
     } finally {
       setIsUploadingImage(false);
     }
@@ -342,8 +311,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     setEditOriginalPrice(prod.originalPrice ? prod.originalPrice.toString() : '');
     setEditUnit(prod.unit || 'Bộ');
     setEditDescription(prod.description || '');
-    setEditImage(prod.image || '');
-    setEditImagesList(prod.images || (prod.image ? [prod.image] : []));
+    setEditImage(prod.picture || '');
+    setEditImagesList(prod.pictures || (prod.picture ? [prod.picture] : []));
     setEditImageInputVal('');
     
     const initialSpecs = Object.entries(prod.specs || {}).map(([k, v]) => ({
@@ -438,8 +407,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       price: parseFloat(editPrice) || 0,
       originalPrice: editOriginalPrice ? parseFloat(editOriginalPrice) : undefined,
       description: editDescription.trim(),
-      image: primaryImage,
-      images: finalImagesToSend,
+      picture: primaryImage,
+      pictures: finalImagesToSend,
       unit: editUnit.trim(),
       specs: specsObject
     };
@@ -486,8 +455,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           price: parseFloat(editPrice) || 0,
           originalPrice: editOriginalPrice ? parseFloat(editOriginalPrice) : undefined,
           description: editDescription.trim(),
-          image: primaryImage,
-          images: finalImagesToSend,
+          picture: primaryImage,
+          pictures: finalImagesToSend,
           unit: editUnit.trim(),
           specs: specsObject,
           reviews: editingProduct?.reviews || []
@@ -668,7 +637,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       }
     });
 
-    // Extract first image from list as main image, or default to fallback or main newImage state
+    // Extract first picture from list as main picture, or default to fallback or main newImage state
     const cleanImages = newImagesList.filter(u => u.trim() !== '');
     const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
     const primaryImage = cleanImages.length > 0 ? cleanImages[0] : (newImage.trim() || fallbackImage);
@@ -685,8 +654,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       price: parseFloat(newPrice) || 0,
       originalPrice: newOriginalPrice ? parseFloat(newOriginalPrice) : undefined,
       description: newDescription.trim(),
-      image: primaryImage,
-      images: finalImagesToSend,
+      picture: primaryImage,
+      pictures: finalImagesToSend,
       unit: newUnit.trim(),
       specs: specsObject
     };
@@ -826,11 +795,11 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           const unit = String(getVal(['Đơn vị', 'Unit']) || '').trim();
           const rawDesc = String(getVal(['Mô tả', 'Description']) || '');
           const description = rawDesc.replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
-          let image = String(getVal(['Link hình ảnh', 'Hình ảnh', 'Image']) || '').trim() || 'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=1200&q=95';
-          if (image.includes('images.unsplash.com')) {
-            image = image.replace(/w=\d+/, 'w=1200').replace(/q=\d+/, 'q=95');
-            if (!image.includes('w=')) {
-              image += (image.includes('?') ? '&' : '?') + 'w=1200&q=95';
+          let picture = String(getVal(['Link hình ảnh', 'Hình ảnh', 'Image']) || '').trim() || 'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=1200&q=95';
+          if (picture.includes('images.unsplash.com')) {
+            picture = picture.replace(/w=\d+/, 'w=1200').replace(/q=\d+/, 'q=95');
+            if (!picture.includes('w=')) {
+              picture += (picture.includes('?') ? '&' : '?') + 'w=1200&q=95';
             }
           }
           
@@ -859,7 +828,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
             category: 'Danh mục sản phẩm',
             group,
             price,
-            image,
+            picture,
             description,
             unit: unit || undefined,
             specs,
@@ -1595,9 +1564,9 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           <div className="grid grid-cols-3 gap-2 max-h-44 overflow-y-auto">
                             {newImagesList.map((img, idx) => (
                               <div key={idx} className="aspect-square relative group rounded-lg border border-slate-200 overflow-hidden bg-slate-50/50 flex items-center justify-center">
-                                <img 
+                                <img loading="lazy" 
                                   src={img} 
-                                  alt={`Product image ${idx + 1}`} 
+                                  alt={`Product picture ${idx + 1}`} 
                                   referrerPolicy="no-referrer"
                                   title="Bấm để xếp làm ảnh đại diện chính"
                                   onClick={() => {
@@ -1811,8 +1780,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                             }}
                             className="flex items-center gap-3 p-3 hover:bg-slate-50/80 cursor-pointer transition-colors group"
                           >
-                            <img 
-                              src={p.image} 
+                            <img loading="lazy" 
+                              src={p.picture} 
                               alt={p.name} 
                               className="w-10 h-10 object-contain rounded bg-slate-50 border border-slate-100 flex-shrink-0 group-hover:scale-105 transition-transform" 
                               onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=100&auto=format&fit=crop&q=60'; }} 
@@ -1877,7 +1846,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           {(hasSearched ? foundProducts : allProductsCache).map((p) => (
                             <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                               <td className="p-4">
-                                <img src={p.image} alt={p.name} className="w-12 h-12 object-contain bg-slate-50 rounded" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=100&auto=format&fit=crop&q=60'; }} />
+                                <img loading="lazy" src={p.picture} alt={p.name} className="w-12 h-12 object-contain bg-slate-50 rounded" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=100&auto=format&fit=crop&q=60'; }} />
                               </td>
                               <td className="p-4 font-mono font-bold text-slate-600">{p.sku}</td>
                               <td className="p-4 font-bold text-slate-800 text-sm max-w-xs truncate">{p.name}</td>
@@ -2232,7 +2201,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                               <div className="grid grid-cols-4 gap-2 border bg-slate-50/50 p-3 rounded-xl max-h-48 overflow-y-auto">
                                 {editImagesList.map((imgUrl, imgIdx) => (
                                   <div key={imgIdx} className="relative aspect-square border bg-white rounded-lg p-1 group overflow-hidden">
-                                    <img src={imgUrl} className="w-full h-full object-contain" alt="" />
+                                    <img loading="lazy" src={imgUrl} className="w-full h-full object-contain" alt="" />
                                     <button 
                                       type="button"
                                       onClick={() => {
@@ -2256,7 +2225,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                             {editImage && (
                               <div className="pt-2 flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase">Ảnh đại diện chính:</span>
-                                <img src={editImage} className="w-6 h-6 rounded object-cover border border-slate-200" alt="" />
+                                <img loading="lazy" src={editImage} className="w-6 h-6 rounded object-cover border border-slate-200" alt="" />
                               </div>
                             )}
                           </div>

@@ -142,7 +142,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
             className="flex items-center gap-2.5 hover:opacity-100 transition-all p-1.5 md:p-2 rounded-2xl group text-left active:scale-[0.98] cursor-pointer"
           >
             <div className="relative flex items-center justify-center w-14 h-14 md:w-18 md:h-18 rounded-xl bg-transparent group-hover:scale-105 transition-all overflow-hidden flex-shrink-0">
-              <img src={logoImage} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" referrerPolicy="no-referrer" />
+              <img loading="lazy" src={logoImage} alt="Logo" className="w-full h-full object-contain mix-blend-multiply" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-base md:text-xl font-black text-brand-primary tracking-tight font-sans">
@@ -200,7 +200,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                           className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 transition-colors rounded-xl text-left group/res"
                         >
                           <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
-                            <img src={getHighResImageUrl(product.image)} alt={product.name} className="w-full h-full object-cover" />
+                            <img loading="lazy" src={getHighResImageUrl(product.picture)} alt={product.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 overflow-hidden">
                             <h4 className="text-sm font-bold text-slate-800 truncate group-hover/res:text-brand-primary transition-colors">{product.name}</h4>
@@ -425,7 +425,7 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
                       }}
                       className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg text-left"
                     >
-                      <img src={getHighResImageUrl(product.image)} alt={product.name} className="w-10 h-10 rounded object-cover" />
+                      <img loading="lazy" src={getHighResImageUrl(product.picture)} alt={product.name} className="w-10 h-10 rounded object-cover" />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold truncate">{product.name}</p>
                         <div className="flex flex-wrap items-center gap-1 my-0.5">

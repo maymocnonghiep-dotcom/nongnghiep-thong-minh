@@ -1,5 +1,5 @@
 /**
- * Optimizes image URLs from various common hosting platforms/CDNs
+ * Optimizes picture URLs from various common hosting platforms/CDNs
  * (WordPress/WooCommerce, Google Photos/Drive, Sapo, Haravan, Shopify, Unsplash, etc.)
  * to load the highest possible resolution instead of a blurry thumbnail.
  */
@@ -30,7 +30,7 @@ export function getHighResImageUrl(url: string | undefined | null): string {
   }
 
   // 3. WordPress / WooCommerce thumbnails (e.g., filename-300x300.jpg, filename-150x150.jpg, filename-600x600.jpg)
-  // Strips the "-300x300" (or any size) suffix to fetch the original high-resolution image
+  // Strips the "-300x300" (or any size) suffix to fetch the original high-resolution picture
   const wpRegex = /-([0-9]+)x([0-9]+)\.(jpe?g|png|gif|webp|bmp|PNG|JPG|JPEG|WEBP)$/;
   if (wpRegex.test(optimized)) {
     optimized = optimized.replace(wpRegex, (match, w, h, ext) => {
@@ -70,7 +70,7 @@ export function getHighResImageUrl(url: string | undefined | null): string {
 }
 
 /**
- * Compresses an image file to a maximum width/height and quality
+ * Compresses an picture file to a maximum width/height and quality
  * using Canvas API, returned as a base64 DataURL.
  */
 export function compressImage(file: File, maxWidth = 1920, maxHeight = 1920, quality = 0.90): Promise<string> {

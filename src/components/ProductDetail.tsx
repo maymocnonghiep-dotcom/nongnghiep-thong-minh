@@ -134,8 +134,8 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
               {/* Product Image Stage & Gallery Selector */}
               <div className="flex flex-col gap-4 self-start w-full">
                 {(() => {
-                  const imageList = product.images && product.images.length > 0 ? product.images : [product.image];
-                  const selectedImgSrc = imageList[activeImgIndex] || product.image;
+                  const imageList = product.pictures && product.pictures.length > 0 ? product.pictures : [product.picture];
+                  const selectedImgSrc = imageList[activeImgIndex] || product.picture;
                   return (
                     <>
                       <motion.div 
@@ -146,7 +146,7 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                         onMouseEnter={() => setIsZooming(true)}
                         onMouseLeave={() => setIsZooming(false)}
                       >
-                        <img 
+                        <img loading="lazy" 
                           src={getHighResImageUrl(selectedImgSrc)} 
                           className="w-full h-full object-cover" 
                           style={{
@@ -180,7 +180,7 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                                   : 'border-slate-200/80 hover:border-slate-400'
                               }`}
                             >
-                              <img 
+                              <img loading="lazy" 
                                 src={img} 
                                 alt={`${product.name} thumbnail ${idx + 1}`} 
                                 referrerPolicy="no-referrer"

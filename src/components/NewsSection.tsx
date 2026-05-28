@@ -59,7 +59,7 @@ export default function NewsSection() {
               className="group cursor-pointer"
             >
               <div className="aspect-[16/10] rounded-3xl overflow-hidden mb-6 relative">
-                <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img loading="lazy" src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <span className="absolute top-4 left-4 bg-brand-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase">
                   {item.category}
                 </span>

@@ -51,7 +51,7 @@ export default function Customers() {
               </div>
               
               <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border-4 border-white shadow-md">
-                <img src={t.image} className="w-full h-full object-cover" />
+                <img loading="lazy" src={t.image} className="w-full h-full object-cover" />
               </div>
               
               <div className="flex flex-col justify-center">
