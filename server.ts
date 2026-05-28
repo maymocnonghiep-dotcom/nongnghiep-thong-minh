@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, initializeFirestore, collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore/lite";
+import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 
 const app = express();
 const PORT = 3000;
@@ -1063,6 +1064,7 @@ const PORT = 3000;
   }
 
   let db: any = null;
+  let firebaseApp: any = null;
   let firebaseConfig: any = null;
 
   try {
@@ -1088,7 +1090,7 @@ const PORT = 3000;
 
   if (firebaseConfig) {
     try {
-      const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       db = initializeFirestore(firebaseApp, {
         ignoreUndefinedProperties: true
       }, firebaseConfig.firestoreDatabaseId);
@@ -1612,6 +1614,50 @@ const PORT = 3000;
       res.status(500).json({
         success: false,
         message: `Đã xảy ra lỗi trên hệ thống khi xử lý file: ${error.message || "Lỗi không xác định"}`
+      });
+    }
+  });
+
+  app.post("/api/admin/upload-image", async (req, res) => {
+    try {
+      if (!firebaseApp) {
+        return res.status(500).json({ success: false, message: "Hệ thống chưa kết nối xong với Firestore/Storage." });
+      }
+      
+      const { base64Data, filename, contentType } = req.body;
+      if (!base64Data) {
+        return res.status(400).json({ success: false, message: "Dữ liệu ảnh trống!" });
+      }
+
+      const storage = getStorage(firebaseApp);
+      
+      // Clean and generate file path
+      const cleanFilename = String(filename || `upload-${Date.now()}`)
+        .replace(/[^a-zA-Z0-9.-]/g, "_");
+      const storagePath = `products/${Date.now()}-${cleanFilename}`;
+      const storageRef = ref(storage, storagePath);
+      
+      const mimeType = contentType || "image/jpeg";
+      const format = base64Data.startsWith("data:") ? "data_url" : "base64";
+      
+      console.log(`[Storage Upload] Starting upload for ${storagePath} (${mimeType})...`);
+      
+      await uploadString(storageRef, base64Data, format, {
+        contentType: mimeType
+      });
+      
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log(`[Storage Upload] Upload success! URL: ${downloadURL}`);
+      
+      res.json({
+        success: true,
+        url: downloadURL
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi tải ảnh lên Firebase Storage:", error);
+      res.status(500).json({
+        success: false,
+        message: `Không thể tải ảnh lên kho lưu trữ: ${error.message || String(error)}`
       });
     }
   });

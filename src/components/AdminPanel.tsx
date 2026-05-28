@@ -105,6 +105,52 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [productSuccessMessage, setProductSuccessMessage] = useState<string | null>(null);
   const [productErrorMessage, setProductErrorMessage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const uploadImageToServer = async (file: File): Promise<string> => {
+    setIsUploadingImage(true);
+    try {
+      let base64Data = '';
+      try {
+        base64Data = await compressImage(file, 800, 800, 0.75);
+      } catch (err) {
+        console.error('Lỗi khi nén ảnh, chuyển sang đọc bằng FileReader trực tiếp:', err);
+        base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              reject(new Error('Không thể đọc file dưới dạng Base64'));
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const response = await fetch(getApiUrl('/api/admin/upload-image'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          base64Data,
+          filename: file.name,
+          contentType: file.type
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Lỗi tải ảnh lên Storage');
+      }
+
+      return data.url;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
   const [newImagesList, setNewImagesList] = useState<string[]>([]);
   const [imageInputVal, setImageInputVal] = useState('');
   const [isCategoryHovered, setIsCategoryHovered] = useState(false);
@@ -229,19 +275,12 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     if (!file) return;
 
     try {
-      const compressedB64 = await compressImage(file, 800, 800, 0.75);
-      setEditImage(compressedB64);
-      setEditImagesList(prev => [...prev, compressedB64]);
-    } catch (err) {
-      console.error('Lỗi khi nén ảnh chính:', err);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setEditImage(reader.result);
-          setEditImagesList(prev => [...prev, reader.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
+      const url = await uploadImageToServer(file);
+      setEditImage(url);
+      setEditImagesList(prev => [...prev, url]);
+    } catch (err: any) {
+      console.error('Lỗi khi tải ảnh chính (edit) lên Storage:', err);
+      setEditProductErrorMsg('Tải ảnh chính thất bại: ' + (err.message || err));
     }
   };
 
@@ -253,17 +292,11 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       const file = files[i];
       if (file) {
         try {
-          const compressedB64 = await compressImage(file, 800, 800, 0.75);
-          setEditImagesList(prev => [...prev, compressedB64]);
-        } catch (err) {
-          console.error('Lỗi khi nén ảnh phụ:', err);
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              setEditImagesList(prev => [...prev, reader.result as string]);
-            }
-          };
-          reader.readAsDataURL(file);
+          const url = await uploadImageToServer(file);
+          setEditImagesList(prev => [...prev, url]);
+        } catch (err: any) {
+          console.error('Lỗi khi tải ảnh phụ (edit) lên Storage:', err);
+          setEditProductErrorMsg('Tải ảnh phụ thất bại: ' + (err.message || err));
         }
       }
     }
@@ -526,19 +559,12 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     if (!file) return;
 
     try {
-      const compressedB64 = await compressImage(file, 800, 800, 0.75);
-      setNewImage(compressedB64);
-      setNewImagesList(prev => [...prev, compressedB64]);
-    } catch (err) {
-      console.error('Lỗi khi nén ảnh chính:', err);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setNewImage(reader.result);
-          setNewImagesList(prev => [...prev, reader.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
+      const url = await uploadImageToServer(file);
+      setNewImage(url);
+      setNewImagesList(prev => [...prev, url]);
+    } catch (err: any) {
+      console.error('Lỗi khi tải ảnh chính lên Storage:', err);
+      setProductErrorMessage('Tải ảnh chính thất bại: ' + (err.message || err));
     }
   };
 
@@ -550,17 +576,11 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       const file = files[i];
       if (file) {
         try {
-          const compressedB64 = await compressImage(file, 800, 800, 0.75);
-          setNewImagesList(prev => [...prev, compressedB64]);
-        } catch (err) {
-          console.error('Lỗi khi nén ảnh phụ:', err);
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              setNewImagesList(prev => [...prev, reader.result as string]);
-            }
-          };
-          reader.readAsDataURL(file);
+          const url = await uploadImageToServer(file);
+          setNewImagesList(prev => [...prev, url]);
+        } catch (err: any) {
+          console.error('Lỗi khi tải ảnh phụ lên Storage:', err);
+          setProductErrorMessage('Tải ảnh phụ thất bại: ' + (err.message || err));
         }
       }
     }
@@ -1540,6 +1560,12 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                         </div>
                         <div className="space-y-1.55">
                           <span className="text-xs text-slate-500 font-bold">Cách 2: Tải lên từ máy tính của bạn (Chọn nhiều ảnh được)</span>
+                          {isUploadingImage && (
+                            <div className="text-[11px] text-sky-600 font-extrabold animate-pulse pb-1 flex items-center gap-1.5">
+                              <span className="w-2 h-2 bg-sky-600 rounded-full animate-ping"></span>
+                              ⏳ Đang tải ảnh của sếp lên kho lưu trữ đám mây, vui lòng chờ trong giây lát...
+                            </div>
+                          )}
                           <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 hover:border-brand-primary bg-white hover:bg-slate-50 rounded-xl py-3 px-4 cursor-pointer transition-all">
                             <Upload size={16} className="text-slate-400" />
                             <span className="text-xs text-slate-600 font-bold">Chọn các ảnh thiết bị...</span>
@@ -2161,6 +2187,13 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                                 Thêm Link
                               </button>
                             </div>
+
+                            {isUploadingImage && (
+                              <div className="text-[11px] text-sky-600 font-extrabold animate-pulse pb-1 flex items-center justify-center gap-1.5 bg-sky-50 py-2 rounded-xl border border-sky-100">
+                                <span className="w-1.5 h-1.5 bg-sky-600 rounded-full animate-ping"></span>
+                                ⏳ Chỉ một loáng thôi ạ, ảnh đang được tải lên dữ liệu đám mây...
+                              </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-3">
                               <label className="border border-dashed border-slate-200 hover:border-brand-primary hover:bg-brand-primary/5 transition-all rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer text-center">
