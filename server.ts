@@ -1385,13 +1385,9 @@ const PORT = 3000;
         await ensureProductsLoaded();
       }
       
-      if (isWebPreview(req)) {
-        res.json(activeProducts);
-      } else {
-        const demoSkus = new Set(products.map((p: any) => String(p.sku || p.id || "").trim().toLowerCase()));
-        const newlyEnteredProducts = activeProducts.filter(p => p && !demoSkus.has(String(p.sku || p.id || "").trim().toLowerCase()));
-        res.json(newlyEnteredProducts);
-      }
+      // Luôn trả về danh sách sản phẩm activeProducts đầy đủ để đảm bảo tính nhất quán của dữ liệu
+      // giữa môi trường phát triển (Preview) và môi trường thực tế (Shared/Production).
+      res.json(activeProducts);
     } catch (err: any) {
       console.error("Error in GET /api/products:", err);
       res.status(500).json({ success: false, message: err.message });
