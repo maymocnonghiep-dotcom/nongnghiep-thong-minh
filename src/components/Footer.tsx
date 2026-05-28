@@ -7,6 +7,8 @@ interface FooterProps {
   onAdminClick?: () => void;
 }
 
+let visitorStatsCached: { today: number; total: number } | null = null;
+
 export default function Footer({ onAdminClick }: FooterProps) {
   const [visitorStats, setVisitorStats] = useState({ total: 12480, today: 150 });
 
@@ -85,6 +87,11 @@ export default function Footer({ onAdminClick }: FooterProps) {
   }, []);
 
   useEffect(() => {
+    if (visitorStatsCached) {
+      setVisitorStats(visitorStatsCached);
+      return;
+    }
+
     // Load local storage cache as the initial display fallback
     const cacheToday = safeLocalStorage.getItem('cached_today_visits');
     const cacheTotal = safeLocalStorage.getItem('cached_total_visits');
@@ -113,7 +120,9 @@ export default function Footer({ onAdminClick }: FooterProps) {
           if (res.ok) {
             const data = await res.json();
             if (data && typeof data.today === 'number' && typeof data.total === 'number') {
-              setVisitorStats({ today: data.today, total: data.total });
+              const freshStats = { today: data.today, total: data.total };
+              visitorStatsCached = freshStats;
+              setVisitorStats(freshStats);
               safeLocalStorage.setItem('cached_today_visits', String(data.today));
               safeLocalStorage.setItem('cached_total_visits', String(data.total));
             }
@@ -125,9 +134,11 @@ export default function Footer({ onAdminClick }: FooterProps) {
           if (res.ok) {
             const data = await res.json();
             if (data && typeof data.today === 'number' && typeof data.total === 'number') {
-              setVisitorStats({ today: data.today, total: data.total });
-              safeLocalStorage.setItem('cached_today_visits', String(data.today));
-              safeLocalStorage.setItem('cached_total_visits', String(data.total));
+              const freshStats = { today: data.today, total: data.total };
+              visitorStatsCached = freshStats;
+              setVisitorStats(freshStats);
+              safeLocalStorage.setItem('cached_today_visits', String(freshStats.today));
+              safeLocalStorage.setItem('cached_total_visits', String(freshStats.total));
             }
           }
         }

@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react';
-import ProductCard from './ProductCard';
-import { ChevronLeft, ChevronRight, ArrowUpNarrowWide, ArrowDownWideNarrow, Percent, Filter } from 'lucide-react';
-import { Product } from '../types';
-import { subcategoriesMap, matchesSubcategoryPattern } from '../categoriesData';
-import { getApiUrl } from '../utils';
+import { useEffect, useState } from "react";
+import ProductCard from "./ProductCard";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpNarrowWide,
+  ArrowDownWideNarrow,
+  Percent,
+  Filter,
+} from "lucide-react";
+import { Product } from "../types";
+import { subcategoriesMap, matchesSubcategoryPattern } from "../categoriesData";
+import { getApiUrl } from "../utils";
 
 interface FeaturedProductsProps {
   onProductClick: (product: Product) => void;
@@ -11,71 +18,119 @@ interface FeaturedProductsProps {
   categoryFilter?: string;
   initialSubcategory?: string;
   products?: Product[];
-  isLoadingProducts?: boolean;
 }
 
-type SortOption = 'price-asc' | 'price-desc' | 'discount-desc';
+type SortOption = "price-asc" | "price-desc" | "discount-desc";
 
-export default function FeaturedProducts({ onProductClick, onAddToCart, categoryFilter, initialSubcategory, products = [], isLoadingProducts = false }: FeaturedProductsProps) {
-  const [allProducts, setAllProducts] = useState<Product[]>(products);
-  const [sortBy, setSortBy] = useState<SortOption>('price-asc');
-  const [loading, setLoading] = useState(isLoadingProducts && products.length === 0);
+let productsCached: Product[] | null = null;
+
+export default function FeaturedProducts({
+  onProductClick,
+  onAddToCart,
+  categoryFilter,
+  initialSubcategory,
+  products,
+}: FeaturedProductsProps) {
+  const [allProducts, setAllProducts] = useState<Product[]>(
+    products || productsCached || [],
+  );
+  const [sortBy, setSortBy] = useState<SortOption>("price-asc");
+  const [loading, setLoading] = useState(
+    !(products && products.length > 0) &&
+      !(productsCached && productsCached.length > 0),
+  );
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
 
-  const activeSubcategories = categoryFilter && subcategoriesMap[categoryFilter]
-    ? [{ id: 'all', name: 'Tất cả', keywords: [] }, ...subcategoriesMap[categoryFilter]]
-    : [];
+  const activeSubcategories =
+    categoryFilter && subcategoriesMap[categoryFilter]
+      ? [
+          { id: "all", name: "Tất cả", keywords: [] },
+          ...subcategoriesMap[categoryFilter],
+        ]
+      : [];
 
   useEffect(() => {
-    setAllProducts(products);
-    setLoading(isLoadingProducts && products.length === 0);
-  }, [products, isLoadingProducts]);
+    if (products && products.length > 0) {
+      productsCached = products;
+      setAllProducts(products);
+      setLoading(false);
+    } else if (productsCached && productsCached.length > 0) {
+      setAllProducts(productsCached);
+      setLoading(false);
+    } else {
+      // Avoid making redundant fetch requests, rely on parent component's fetch.
+      // Simply check the local storage cache as a fast visual fallback
+      const localStr = localStorage.getItem("local_products");
+      if (localStr) {
+        try {
+          const loaded = JSON.parse(localStr);
+          productsCached = loaded;
+          setAllProducts(loaded);
+        } catch (e) {}
+      }
+      setLoading(false);
+    }
+  }, [products]);
 
   useEffect(() => {
     setCurrentPage(1);
     if (initialSubcategory) {
       setSelectedSubcategory(initialSubcategory);
     } else {
-      setSelectedSubcategory('all');
+      setSelectedSubcategory("all");
     }
   }, [categoryFilter, sortBy, initialSubcategory]);
 
   const getFilteredAndSortedProducts = () => {
     const definedGroups = [
-      'Thiết bị tưới',
-      'Đồ điện',
-      'Vật tư nước',
-      'Dụng cụ làm vườn',
-      'Camera An Ninh',
-      'Đèn năng lượng mặt trời',
-      'Pin lithium & Linh kiện Pin lithium',
+      "Thiết bị tưới",
+      "Đồ điện",
+      "Vật tư nước",
+      "Dụng cụ làm vườn",
+      "Camera An Ninh",
+      "Đèn năng lượng mặt trời",
+      "Pin lithium & Linh kiện Pin lithium",
     ];
 
     let filtered;
-    if (categoryFilter === 'Danh mục khác') {
-      filtered = allProducts.filter(p => {
+    if (categoryFilter === "Danh mục khác") {
+      filtered = allProducts.filter((p) => {
         // Doesn't belong to other main categories, or doesn't have a level 2 group (subcategoryId)
-        const notInMain = !p.group || p.group === 'Danh mục khác' || !definedGroups.includes(p.group);
-        const noSubcategory = !p.subcategoryId || p.subcategoryId.trim() === '';
+        const notInMain =
+          !p.group ||
+          p.group === "Danh mục khác" ||
+          !definedGroups.includes(p.group);
+        const noSubcategory = !p.subcategoryId || p.subcategoryId.trim() === "";
         return notInMain || noSubcategory;
       });
     } else if (categoryFilter) {
-      filtered = allProducts.filter(p => p.group === categoryFilter);
+      filtered = allProducts.filter((p) => p.group === categoryFilter);
     } else {
       filtered = allProducts;
     }
 
-    if (categoryFilter && selectedSubcategory !== 'all' && subcategoriesMap[categoryFilter]) {
-      filtered = filtered.filter(p => 
-        matchesSubcategoryPattern(p.name, p.description, selectedSubcategory, subcategoriesMap[categoryFilter], p.subcategoryId)
+    if (
+      categoryFilter &&
+      selectedSubcategory !== "all" &&
+      subcategoriesMap[categoryFilter]
+    ) {
+      filtered = filtered.filter((p) =>
+        matchesSubcategoryPattern(
+          p.name,
+          p.description,
+          selectedSubcategory,
+          subcategoriesMap[categoryFilter],
+          p.subcategoryId,
+        ),
       );
     }
 
     const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'price-asc') return a.price - b.price;
-      if (sortBy === 'price-desc') return b.price - a.price;
-      if (sortBy === 'discount-desc') return (b.discount || 0) - (a.discount || 0);
+      if (sortBy === "price-asc") return a.price - b.price;
+      if (sortBy === "price-desc") return b.price - a.price;
+      if (sortBy === "discount-desc")
+        return (b.discount || 0) - (a.discount || 0);
       return 0;
     });
 
@@ -94,61 +149,69 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
   const itemsPerPage = 20;
   const totalItems = sortedProducts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
+
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const productsToShow = sortedProducts.slice(startIndex, startIndex + itemsPerPage);
+  const productsToShow = sortedProducts.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    const element = document.getElementById('featured-products');
+    const element = document.getElementById("featured-products");
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   return (
-    <section id="featured-products" className="py-12 px-4 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
+    <section
+      id="featured-products"
+      className="py-12 px-4 lg:px-8 max-w-7xl mx-auto scroll-mt-24"
+    >
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-slate-100 gap-6">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-1 tracking-tight">
-            {categoryFilter ? `Nhóm: ${categoryFilter}` : 'Mặt hàng nổi bật'}
+            {categoryFilter ? `Nhóm: ${categoryFilter}` : "Mặt hàng nổi bật"}
           </h2>
-          <p className="text-slate-500 text-sm font-medium">Khám phá giải pháp nông cụ thông minh</p>
+          <p className="text-slate-500 text-sm font-medium">
+            Khám phá giải pháp nông cụ thông minh
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">
             <Filter size={14} /> Sắp xếp
           </div>
-          
-          <button 
-            onClick={() => setSortBy('price-asc')}
+
+          <button
+            onClick={() => setSortBy("price-asc")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-              sortBy === 'price-asc' 
-                ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' 
-                : 'bg-white text-slate-600 border-slate-100 hover:border-brand-primary/30'
+              sortBy === "price-asc"
+                ? "bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20"
+                : "bg-white text-slate-600 border-slate-100 hover:border-brand-primary/30"
             }`}
           >
             <ArrowUpNarrowWide size={14} /> Giá tăng
           </button>
-          
-          <button 
-            onClick={() => setSortBy('price-desc')}
+
+          <button
+            onClick={() => setSortBy("price-desc")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-              sortBy === 'price-desc' 
-                ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' 
-                : 'bg-white text-slate-600 border-slate-100 hover:border-brand-primary/30'
+              sortBy === "price-desc"
+                ? "bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20"
+                : "bg-white text-slate-600 border-slate-100 hover:border-brand-primary/30"
             }`}
           >
             <ArrowDownWideNarrow size={14} /> Giá giảm
           </button>
-          
-          <button 
-            onClick={() => setSortBy('discount-desc')}
+
+          <button
+            onClick={() => setSortBy("discount-desc")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-              sortBy === 'discount-desc' 
-                ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' 
-                : 'bg-white text-slate-600 border-slate-100 hover:border-brand-primary/30'
+              sortBy === "discount-desc"
+                ? "bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20"
+                : "bg-white text-slate-600 border-slate-100 hover:border-brand-primary/30"
             }`}
           >
             <Percent size={14} /> Khuyến mãi
@@ -165,17 +228,17 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
                 setSelectedSubcategory(sub.id);
                 setCurrentPage(1);
                 if (categoryFilter) {
-                  const subPart = sub.id !== 'all' ? `::${sub.id}` : '';
+                  const subPart = sub.id !== "all" ? `::${sub.id}` : "";
                   const path = `/danh-muc/${encodeURIComponent(categoryFilter + subPart)}`;
                   if (window.location.pathname !== path) {
-                    window.history.pushState(null, '', path);
+                    window.history.pushState(null, "", path);
                   }
                 }
               }}
               className={`px-5 py-2.5 rounded-xl text-xs font-black tracking-wide uppercase transition-all whitespace-nowrap cursor-pointer ${
                 selectedSubcategory === sub.id
-                  ? 'bg-white text-brand-primary shadow-sm border border-slate-200/20'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+                  ? "bg-white text-brand-primary shadow-sm border border-slate-200/20"
+                  : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
               }`}
             >
               {sub.name}
@@ -186,14 +249,16 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
 
       {productsToShow.length === 0 ? (
         <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100">
-          <p className="text-slate-500 font-bold">Không tìm thấy sản phẩm nào</p>
+          <p className="text-slate-500 font-bold">
+            Không tìm thấy sản phẩm nào
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 justify-items-center">
-          {productsToShow.map(product => (
-            <ProductCard 
+          {productsToShow.map((product) => (
+            <ProductCard
               key={product.id}
-              product={product} 
+              product={product}
               onClick={onProductClick}
               onAddToCart={onAddToCart}
             />
@@ -208,8 +273,8 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
             disabled={currentPage === 1}
             className={`p-2.5 rounded-xl border flex items-center justify-center transition-all ${
               currentPage === 1
-                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-brand-primary hover:text-brand-primary active:scale-95'
+                ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                : "bg-white text-slate-600 border-slate-200 hover:border-brand-primary hover:text-brand-primary active:scale-95"
             }`}
             title="Trang trước"
           >
@@ -222,8 +287,8 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
               onClick={() => handlePageChange(page)}
               className={`w-10 h-10 rounded-xl border font-bold text-sm transition-all active:scale-95 ${
                 currentPage === page
-                  ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/25'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-brand-primary/40 hover:text-brand-primary'
+                  ? "bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/25"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-brand-primary/40 hover:text-brand-primary"
               }`}
             >
               {page}
@@ -235,8 +300,8 @@ export default function FeaturedProducts({ onProductClick, onAddToCart, category
             disabled={currentPage === totalPages}
             className={`p-2.5 rounded-xl border flex items-center justify-center transition-all ${
               currentPage === totalPages
-                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-brand-primary hover:text-brand-primary active:scale-95'
+                ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                : "bg-white text-slate-600 border-slate-200 hover:border-brand-primary hover:text-brand-primary active:scale-95"
             }`}
             title="Trang sau"
           >
