@@ -94,18 +94,19 @@ export default function FeaturedProducts({
     ];
 
     let filtered;
-    if (categoryFilter === "Danh mục khác") {
+    if (categoryFilter && categoryFilter.trim().toLowerCase() === "danh mục khác") {
       filtered = allProducts.filter((p) => {
         // Doesn't belong to other main categories, or doesn't have a level 2 group (subcategoryId)
+        const pGroupClean = (p.group || '').trim().toLowerCase();
         const notInMain =
           !p.group ||
-          p.group === "Danh mục khác" ||
-          !definedGroups.includes(p.group);
+          pGroupClean === "danh mục khác" ||
+          !definedGroups.some(g => g.trim().toLowerCase() === pGroupClean);
         const noSubcategory = !p.subcategoryId || p.subcategoryId.trim() === "";
         return notInMain || noSubcategory;
       });
     } else if (categoryFilter) {
-      filtered = allProducts.filter((p) => p.group === categoryFilter);
+      filtered = allProducts.filter((p) => (p.group || '').trim().toLowerCase() === categoryFilter.trim().toLowerCase());
     } else {
       filtered = allProducts;
     }
@@ -122,6 +123,7 @@ export default function FeaturedProducts({
           selectedSubcategory,
           subcategoriesMap[categoryFilter],
           p.subcategoryId,
+          p.subcategoryName,
         ),
       );
     }

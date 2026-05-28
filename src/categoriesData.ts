@@ -80,13 +80,29 @@ export const getMatchedSubcategory = (productName: string, subcategories: Subcat
   return null;
 };
 
-export const matchesSubcategoryPattern = (productName: string, productDesc: string, subId: string, subcategories: Subcategory[], productSubcategoryId?: string): boolean => {
+export const matchesSubcategoryPattern = (
+  productName: string, 
+  productDesc: string, 
+  subId: string, 
+  subcategories: Subcategory[], 
+  productSubcategoryId?: string,
+  productSubcategoryName?: string
+): boolean => {
   if (subId === 'all') return true;
   
-  if (productSubcategoryId === subId) return true;
+  if (productSubcategoryId && subId && productSubcategoryId.trim().toLowerCase() === subId.trim().toLowerCase()) {
+    return true;
+  }
 
   const sub = subcategories.find(s => s.id === subId);
   if (!sub) return false;
+
+  // So sánh tên danh mục con (subcategoryName) không phân biệt hoa thường và khoảng trắng
+  if (productSubcategoryName && sub.name) {
+    if (productSubcategoryName.trim().toLowerCase() === sub.name.trim().toLowerCase()) {
+      return true;
+    }
+  }
 
   const nameLower = productName?.toLowerCase() || '';
   const descLower = productDesc?.toLowerCase() || '';

@@ -52,7 +52,8 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
   ];
 
   const getProductsByActiveCategory = () => {
-    if (activeCategory === 'Danh mục khác') {
+    const activeClean = (activeCategory || '').trim().toLowerCase();
+    if (activeClean === 'danh mục khác') {
       const definedGroups = [
         'Thiết bị tưới',
         'Đồ điện',
@@ -63,12 +64,13 @@ export default function Header({ onNavigate, currentView, cartCount, onCartOpen,
         'Pin lithium & Linh kiện Pin lithium',
       ];
       return products.filter(p => {
-        const notInMain = !p.group || p.group === 'Danh mục khác' || !definedGroups.includes(p.group);
+        const pGroupClean = (p.group || '').trim().toLowerCase();
+        const notInMain = !p.group || pGroupClean === 'danh mục khác' || !definedGroups.some(g => g.trim().toLowerCase() === pGroupClean);
         const noSubcategory = !p.subcategoryId || p.subcategoryId.trim() === '';
         return notInMain || noSubcategory;
       }).slice(0, 10);
     }
-    return products.filter(p => p.group === activeCategory).slice(0, 10);
+    return products.filter(p => (p.group || '').trim().toLowerCase() === activeClean).slice(0, 10);
   };
 
   return (
