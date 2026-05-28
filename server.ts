@@ -929,7 +929,7 @@ const PORT = 3000;
 
   const isVercelEnvironment = process.env.VERCEL === "1";
   
-  let activeProducts: any[] = (isProduction || isVercelEnvironment) ? [] : [...products];
+  let activeProducts: any[] = [];
   try {
     if (fs.existsSync(dbPath)) {
       const dbContent = fs.readFileSync(dbPath, "utf-8");
@@ -941,6 +941,14 @@ const PORT = 3000;
   } catch (err) {
     console.error("Failed to load local products backup:", err);
   }
+
+  // Đảm bảo không bao giờ rỗng: nếu chưa có file backup hoặc file bị lỗi, dùng danh sách sản phẩm mẫu làm mồi
+  if (activeProducts.length === 0) {
+    activeProducts = [...products];
+  }
+
+  // Biến toàn cục giúp theo dõi trạng thái Firestore bị quá hạn mức đọc (Quota Limit Exceeded) hoặc lỗi timeout liên tiếp
+  let firestoreDisabledDueToQuota = false;
 
   // --- Firestore Integration Set Up ---
   enum OperationType {
@@ -1075,14 +1083,14 @@ const PORT = 3000;
   let visitorStatsLoaded = false;
 
   async function ensureProductsLoaded() {
-    if (!db) {
-      productsLoaded = true; // Mark True to avoid infinite retries
+    if (!db || firestoreDisabledDueToQuota) {
+      productsLoaded = true; // Đánh dấu true để tránh gọi liên tục
       return;
     }
     if (productsLoaded) return;
     try {
       console.log("On-demand: Fetching products from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
+      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 1500, null);
       if (querySnapshot) {
         const firestoreProducts: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1091,23 +1099,34 @@ const PORT = 3000;
         if (firestoreProducts.length > 0) {
           activeProducts = firestoreProducts;
           console.log(`On-demand loaded ${activeProducts.length} items from Firestore.`);
+          // Cập nhật backup ngoại tuyến
+          saveLocalBackupSafely(dbPath, JSON.stringify(activeProducts, null, 2));
         }
+      } else {
+        console.warn("Products sync from Firestore timed out or failed. Switching to local backup buffer mode.");
+        firestoreDisabledDueToQuota = true;
       }
       productsLoaded = true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("On-demand product fetch failed:", err);
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded") || errMsg.includes("unavailable")) {
+        console.warn("Firestore limit hit. Enabling local memory buffer fallback immediately!");
+        firestoreDisabledDueToQuota = true;
+      }
+      productsLoaded = true;
     }
   }
 
   async function ensureOrdersLoaded() {
-    if (!db) {
+    if (!db || firestoreDisabledDueToQuota) {
       ordersLoaded = true;
       return;
     }
     if (ordersLoaded) return;
     try {
       console.log("On-demand: Fetching orders from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 4000, null);
+      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 1500, null);
       if (querySnapshot) {
         const firestoreOrders: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1117,22 +1136,30 @@ const PORT = 3000;
           orders = firestoreOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           console.log(`On-demand loaded ${orders.length} orders from Firestore.`);
         }
+      } else {
+        console.warn("Orders fetch timed out. Suspending active firestore requests.");
+        firestoreDisabledDueToQuota = true;
       }
       ordersLoaded = true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("On-demand orders fetch failed:", err);
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded")) {
+        firestoreDisabledDueToQuota = true;
+      }
+      ordersLoaded = true;
     }
   }
 
   async function ensureConsultationsLoaded() {
-    if (!db) {
+    if (!db || firestoreDisabledDueToQuota) {
       consultationsLoaded = true;
       return;
     }
     if (consultationsLoaded) return;
     try {
       console.log("On-demand: Fetching consultations from Firestore...");
-      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 4000, null);
+      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 1500, null);
       if (querySnapshot) {
         const firestoreConsultations: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1142,15 +1169,23 @@ const PORT = 3000;
           consultations = firestoreConsultations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           console.log(`On-demand loaded ${consultations.length} consultations from Firestore.`);
         }
+      } else {
+        console.warn("Consultations fetch timed out. Suspending active firestore requests.");
+        firestoreDisabledDueToQuota = true;
       }
       consultationsLoaded = true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("On-demand consultations fetch failed:", err);
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded")) {
+        firestoreDisabledDueToQuota = true;
+      }
+      consultationsLoaded = true;
     }
   }
 
   async function ensureVisitorStatsLoaded() {
-    if (!db) {
+    if (!db || firestoreDisabledDueToQuota) {
       visitorStatsLoaded = true;
       return;
     }
@@ -1158,7 +1193,7 @@ const PORT = 3000;
     try {
       console.log("On-demand: Fetching visitor stats from Firestore...");
       const docRef = doc(db, "counters", "visitor_counter");
-      const docSnap = await withTimeout(getDoc(docRef), 3000, null);
+      const docSnap = await withTimeout(getDoc(docRef), 1500, null);
       if (docSnap && docSnap.exists()) {
         const fsData = docSnap.data();
         if (fsData && typeof fsData.today === "number" && typeof fsData.total === "number" && fsData.total > 0) {
@@ -1169,23 +1204,35 @@ const PORT = 3000;
           }
           console.log("On-demand loaded visitor counter stats:", visitorStats);
         }
+      } else {
+        console.warn("Visitor stats fetch timed out. Suspending active firestore requests.");
+        firestoreDisabledDueToQuota = true;
       }
       visitorStatsLoaded = true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("On-demand visitor stats fetch failed:", err);
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded")) {
+        firestoreDisabledDueToQuota = true;
+      }
+      visitorStatsLoaded = true;
     }
   }
 
   // Main synchronization function
   async function syncFirestoreAndLocalBackups() {
-    if (!db) {
-      console.warn("WARNING: Firebase DB is not initialized. Running in local fallback mode.");
+    if (!db || firestoreDisabledDueToQuota) {
+      console.warn("WARNING: Firebase DB is not initialized or suspended. Running in local fallback mode.");
       return;
     }
 
     // 1. Validate Connection to Firestore (Skill guidelines mandate)
     try {
-      await withTimeout(getDoc(doc(db, 'test', 'connection')), 1500, null);
+      const connTest = await withTimeout(getDoc(doc(db, 'test', 'connection')), 1500, null);
+      if (!connTest) {
+        console.warn("Firestore connection check returned null/timeout. Using offline fast backups.");
+        return;
+      }
       console.log("Firestore connection test passed successfully/bypassed.");
     } catch (error) {
       if (error instanceof Error && error.message.includes('the client is offline')) {
@@ -1197,7 +1244,7 @@ const PORT = 3000;
 
     // 2. Fetch and Seed Products
     try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 8000, null);
+      const querySnapshot = await withTimeout(getDocs(collection(db, "products")), 1500, null);
       if (querySnapshot) {
         const firestoreProducts: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1215,20 +1262,26 @@ const PORT = 3000;
             const itemDocRef = doc(db, "products", String(item.id || item.sku));
             return setDoc(itemDocRef, cleanUndefinedForFirestore(item));
           });
-          await withTimeout(Promise.all(seedPromises), 2500, null);
+          await withTimeout(Promise.all(seedPromises), 1500, null);
           console.log(`Successfully seeded ${activeProducts.length} products to Firestore.`);
         }
       } else {
         console.warn("Products sync from Firestore timed out. Falling back to local workspace memory database.");
+        firestoreDisabledDueToQuota = true;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error syncing products from Firestore. Using local workspace backup...");
       handleFirestoreError(err, OperationType.LIST, "products");
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded")) {
+        firestoreDisabledDueToQuota = true;
+      }
     }
 
     // 3. Sync Orders
     try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 2000, null);
+      if (firestoreDisabledDueToQuota) return;
+      const querySnapshot = await withTimeout(getDocs(collection(db, "orders")), 1500, null);
       if (querySnapshot) {
         const firestoreOrders: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1244,18 +1297,23 @@ const PORT = 3000;
           const seedPromises = orders.map((o) => {
             return setDoc(doc(db, "orders", o.id), cleanUndefinedForFirestore(o));
           });
-          await withTimeout(Promise.all(seedPromises), 2500, null);
+          await withTimeout(Promise.all(seedPromises), 1500, null);
         }
       } else {
         console.warn("Orders sync from Firestore timed out. Relying on local backup.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error syncing orders from Firestore:", err);
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded")) {
+        firestoreDisabledDueToQuota = true;
+      }
     }
 
     // 4. Sync Consultations
     try {
-      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 2000, null);
+      if (firestoreDisabledDueToQuota) return;
+      const querySnapshot = await withTimeout(getDocs(collection(db, "consultations")), 1500, null);
       if (querySnapshot) {
         const firestoreConsultations: any[] = [];
         querySnapshot.forEach((d) => {
@@ -1271,13 +1329,17 @@ const PORT = 3000;
           const seedPromises = consultations.map((c) => {
             return setDoc(doc(db, "consultations", c.id), cleanUndefinedForFirestore(c));
           });
-          await withTimeout(Promise.all(seedPromises), 2500, null);
+          await withTimeout(Promise.all(seedPromises), 1500, null);
         }
       } else {
         console.warn("Consultations sync from Firestore timed out. Relying on local backup.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error syncing consultations from Firestore:", err);
+      const errMsg = String(err.message || err).toLowerCase();
+      if (errMsg.includes("quota") || errMsg.includes("exceeded")) {
+        firestoreDisabledDueToQuota = true;
+      }
     }
   }
 
