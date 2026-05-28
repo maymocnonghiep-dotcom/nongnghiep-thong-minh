@@ -54,26 +54,7 @@ export default function App() {
     }
   }, [currentView]);
 
-  const fetchAndMergeProducts = (force = false) => {
-    try {
-      const cachedTime = localStorage.getItem('cached_products_time');
-      const cachedData = localStorage.getItem('cached_products');
-      if (!force && cachedTime && cachedData) {
-        const age = Date.now() - Number(cachedTime);
-        if (age < 45000) { // Keep cache valid for 45s unless forced
-          const parsed = JSON.parse(cachedData);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setProducts(parsed);
-            setIsLoadingProducts(false);
-            console.log(`[Products Cache Hit] Reused cached list of ${parsed.length} items (Cache age: ${Math.round(age / 1000)}s - locked for 45s)`);
-            return;
-          }
-        }
-      }
-    } catch (e) {
-      // Ignored
-    }
-
+  const fetchAndMergeProducts = () => {
     setIsLoadingProducts(true);
     fetch(getApiUrl('/api/products'))
       .then(res => {
@@ -87,7 +68,6 @@ export default function App() {
         setIsLoadingProducts(false);
         try {
           localStorage.setItem('cached_products', JSON.stringify(data));
-          localStorage.setItem('cached_products_time', String(Date.now()));
         } catch (e) {
           // Ignored
         }
