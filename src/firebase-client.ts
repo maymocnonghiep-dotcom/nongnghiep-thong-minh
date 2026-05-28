@@ -2,6 +2,8 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { getApiUrl } from './utils';
 
+import imageCompression from 'browser-image-compression';
+
 export async function initFirebaseClient() {
   if (getApps().length > 0) return getApp();
 
@@ -33,11 +35,32 @@ export async function uploadImageToFirebase(file: File): Promise<string> {
   const storagePath = `products/${Date.now()}-${cleanFilename}`;
   const storageRef = ref(storage, storagePath);
 
-  console.log(`[Storage] Uploading raw file directly to ${storagePath}...`);
+  let fileToUpload: File | Blob = file;
+
+  if (file.type.startsWith('image/')) {
+    try {
+      console.log(`[Storage] Thuộc tính file gốc: ${(file.size / 1024).toFixed(1)} KB`);
+      const options = {
+        maxSizeMB: 0.1, // Mục tiêu nén xuống cỡ < 100KB (nếu có thể) để tối ưu hiển thị
+        maxWidthOrHeight: 1200, // Kích thước tối đa cho hiển thị web chuẩn
+        useWebWorker: true,
+        fileType: 'image/webp', // Định dạng WebP siêu nhẹ
+        initialQuality: 0.8 // Chất lượng ban đầu 80%
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      console.log(`[Storage] Thuộc tính file nén xong: ${(compressedFile.size / 1024).toFixed(1)} KB (Đã giảm ${((1 - compressedFile.size / file.size) * 100).toFixed(1)}%)`);
+      fileToUpload = compressedFile;
+    } catch (err) {
+      console.error('[Storage] Nén ảnh thất bại, dùng file gốc:', err);
+    }
+  }
+
+  console.log(`[Storage] Uploading raw data directly to ${storagePath}...`);
 
   // Upload file without any Base64 encoding!
-  const uploadTask = uploadBytesResumable(storageRef, file, {
-    contentType: file.type || 'image/jpeg',
+  const uploadTask = uploadBytesResumable(storageRef, fileToUpload, {
+    contentType: fileToUpload.type || file.type || 'image/jpeg',
   });
 
   return new Promise((resolve, reject) => {
