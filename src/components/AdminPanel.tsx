@@ -138,7 +138,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     setIsSearchingProduct(true);
     setEditProductErrorMsg(null);
     try {
-      const res = await fetch(getApiUrl('/api/products'));
+      // Buộc máy chủ xóa cache và đồng bộ mới từ Firestore ngay lập tức cho trang Admin
+      const res = await fetch(getApiUrl('/api/products?refresh=true'));
       if (!res.ok) throw new Error('Không thể tải các sản phẩm từ máy chủ');
       const data = await res.json();
       

@@ -48,6 +48,7 @@ export default function App() {
   }, [currentView]);
 
   const fetchAndMergeProducts = (forceUpdate = false) => {
+    let hasUsedCache = false;
     if (!forceUpdate) {
       const cachedSession = safeSessionStorage.getItem("session_products");
       if (cachedSession) {
@@ -55,12 +56,13 @@ export default function App() {
           const cachedProds = JSON.parse(cachedSession);
           if (cachedProds && cachedProds.length > 0) {
             setProducts(cachedProds);
-            return;
+            hasUsedCache = true;
           }
         } catch (e) {}
       }
     }
 
+    // Luôn tải nền từ API để đảm bảo đồng bộ hóa trực tiếp dữ liệu mới nhất từ Firestore (ngay cả khi đã lấy từ cache)
     fetch(getApiUrl("/api/products"))
       .then((res) => {
         if (!res.ok) {
@@ -95,13 +97,15 @@ export default function App() {
           "Error fetching products, falling back to local products:",
           err,
         );
-        const localStr = safeLocalStorage.getItem("local_products");
-        if (localStr) {
-          try {
-            const parsed = JSON.parse(localStr);
-            setProducts(parsed);
-            safeSessionStorage.setItem("session_products", JSON.stringify(parsed));
-          } catch (e) {}
+        if (!hasUsedCache) {
+          const localStr = safeLocalStorage.getItem("local_products");
+          if (localStr) {
+            try {
+              const parsed = JSON.parse(localStr);
+              setProducts(parsed);
+              safeSessionStorage.setItem("session_products", JSON.stringify(parsed));
+            } catch (e) {}
+          }
         }
       });
   };
