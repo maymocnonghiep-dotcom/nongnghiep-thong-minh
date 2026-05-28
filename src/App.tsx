@@ -24,7 +24,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { mainCategories, subcategoriesMap } from "./categoriesData";
-import { getApiUrl } from "./utils";
+import { getApiUrl, safeLocalStorage, safeSessionStorage } from "./utils";
 
 export default function App() {
   const [currentView, setCurrentView] = useState("home");
@@ -49,7 +49,7 @@ export default function App() {
 
   const fetchAndMergeProducts = (forceUpdate = false) => {
     if (!forceUpdate) {
-      const cachedSession = sessionStorage.getItem("session_products");
+      const cachedSession = safeSessionStorage.getItem("session_products");
       if (cachedSession) {
         try {
           const cachedProds = JSON.parse(cachedSession);
@@ -69,7 +69,7 @@ export default function App() {
         return res.json();
       })
       .then((data) => {
-        const localStr = localStorage.getItem("local_products");
+        const localStr = safeLocalStorage.getItem("local_products");
         let localProds: Product[] = [];
         if (localStr) {
           try {
@@ -88,19 +88,19 @@ export default function App() {
           }
         });
         setProducts(merged);
-        sessionStorage.setItem("session_products", JSON.stringify(merged));
+        safeSessionStorage.setItem("session_products", JSON.stringify(merged));
       })
       .catch((err) => {
         console.error(
           "Error fetching products, falling back to local products:",
           err,
         );
-        const localStr = localStorage.getItem("local_products");
+        const localStr = safeLocalStorage.getItem("local_products");
         if (localStr) {
           try {
             const parsed = JSON.parse(localStr);
             setProducts(parsed);
-            sessionStorage.setItem("session_products", JSON.stringify(parsed));
+            safeSessionStorage.setItem("session_products", JSON.stringify(parsed));
           } catch (e) {}
         }
       });

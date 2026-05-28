@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
 import { subcategoriesMap } from '../categoriesData';
-import { compressImage, getApiUrl } from '../utils';
+import { compressImage, getApiUrl, safeLocalStorage } from '../utils';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -142,7 +142,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       if (!res.ok) throw new Error('Không thể tải các sản phẩm từ máy chủ');
       const data = await res.json();
       
-      const localStr = localStorage.getItem('local_products');
+      const localStr = safeLocalStorage.getItem('local_products');
       let localProds: Product[] = [];
       if (localStr) {
         try {
@@ -430,7 +430,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       if (res.ok && data.success) {
         setEditProductSuccessMsg(data.message || 'Cập nhật thông tin sản phẩm thành công!');
         
-        const existingLocalStr = localStorage.getItem('local_products');
+        const existingLocalStr = safeLocalStorage.getItem('local_products');
         let localProducts: Product[] = [];
         if (existingLocalStr) {
           try {
@@ -465,7 +465,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         } else {
           localProducts.push(updatedProduct);
         }
-        localStorage.setItem('local_products', JSON.stringify(localProducts));
+        safeLocalStorage.setItem('local_products', JSON.stringify(localProducts));
 
         // Update current local products cache instantly to stay responsive
         setAllProductsCache(prev => {
@@ -689,7 +689,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
       if (res.ok && data.success) {
         // Also save to localStorage to ensure admin never loses it
-        const localStr = localStorage.getItem('local_products');
+        const localStr = safeLocalStorage.getItem('local_products');
         let localProducts: Product[] = [];
         if (localStr) {
           try {
@@ -700,7 +700,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
         }
         if (data.product) {
             localProducts.push(data.product);
-            localStorage.setItem('local_products', JSON.stringify(localProducts));
+            safeLocalStorage.setItem('local_products', JSON.stringify(localProducts));
         }
 
         setProductSuccessMessage(data.message || 'Thêm sản phẩm thành công!');
@@ -874,7 +874,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
 
         if (result && result.fallbackToLocal) {
           // Client-side local storage fallback
-          const existingLocalStr = localStorage.getItem('local_products');
+          const existingLocalStr = safeLocalStorage.getItem('local_products');
           let localProducts: Product[] = [];
           if (existingLocalStr) {
             try {
@@ -910,7 +910,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
             }
           });
 
-          localStorage.setItem('local_products', JSON.stringify(localProducts));
+          safeLocalStorage.setItem('local_products', JSON.stringify(localProducts));
 
           setIsImporting(false);
           setImportResult({
@@ -924,7 +924,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
           }
         } else if (result && result.success) {
           // Also mirror to local storage on success for extreme reliability
-          const existingLocalStr = localStorage.getItem('local_products');
+          const existingLocalStr = safeLocalStorage.getItem('local_products');
           let localProducts: Product[] = [];
           if (existingLocalStr) {
             try {
@@ -945,7 +945,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
               });
             }
           });
-          localStorage.setItem('local_products', JSON.stringify(localProducts));
+          safeLocalStorage.setItem('local_products', JSON.stringify(localProducts));
 
           setIsImporting(false);
           setImportResult({
