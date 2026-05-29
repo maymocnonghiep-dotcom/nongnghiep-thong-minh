@@ -6,6 +6,7 @@ import { Product, Order } from '../types';
 import { subcategoriesMap } from '../categoriesData';
 import { getApiUrl, safeLocalStorage } from '../utils';
 import { uploadImageToFirebase } from '../firebase-client';
+import BulkImportProduct from './BulkImportProduct';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -1084,53 +1085,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
             </div>
 
             {activeTab === 'import' ? (
-              <>
-                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 not-italic font-sans">
-                  <Upload size={24} className="text-brand-primary" /> Nhập hàng loạt từ Excel
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-sm">
-                    <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                        <h3 className="font-bold text-blue-800 mb-2">Bước 1: Tải file mẫu</h3>
-                        <p className="text-blue-600 mb-4 opacity-80">Vui lòng sử dụng file mẫu Excel đúng định dạng để hệ thống có thể nhận diện dữ liệu chính xác nhất.</p>
-                        <button 
-                          onClick={downloadTemplate}
-                          className="flex items-center gap-2 text-brand-secondary font-bold hover:underline"
-                        >
-                          <FileText size={18} /> Tải file mẫu (.xlsx)
-                        </button>
-                    </div>
-                    <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
-                        <h3 className="font-bold text-orange-800 mb-2">Bước 2: Tải lên dữ liệu</h3>
-                        <p className="text-orange-600 mb-4 opacity-80">Sau khi điền đầy đủ thông tin vào file mẫu, hãy tải file lên đây để cập nhật vào hệ thống.</p>
-                        <label className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-2 rounded-xl font-bold cursor-pointer hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20">
-                          <Upload size={18} /> Chọn file Excel
-                          <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
-                        </label>
-                    </div>
-                </div>
-
-                {isImporting && (
-                  <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mb-4"></div>
-                    <p className="font-bold text-slate-500">Đang xử lý dữ liệu... Vui lòng đợi trong giây lát</p>
-                  </div>
-                )}
-
-                {importResult && !isImporting && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-6 rounded-2xl flex items-center gap-4 ${importResult.success ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}
-                  >
-                    {importResult.success ? <CheckCircle2 size={32} /> : <AlertCircle size={32} />}
-                    <div>
-                       <h4 className="font-bold text-lg">{importResult.success ? 'Thành công!' : 'Thất bại'}</h4>
-                       <p className="opacity-80">{importResult.message}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </>
+              <BulkImportProduct onComplete={onRefreshProducts} />
             ) : activeTab === 'consultations' ? (
               <div>
                 <div className="flex items-center justify-between mb-6">

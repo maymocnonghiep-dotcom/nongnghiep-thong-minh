@@ -134,8 +134,9 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
               {/* Product Image Stage & Gallery Selector */}
               <div className="flex flex-col gap-4 self-start w-full">
                 {(() => {
-                  const imageList = product.pictures && product.pictures.length > 0 ? product.pictures : [product.picture];
-                  const selectedImgSrc = imageList[activeImgIndex] || product.picture;
+                  const fallbackImage = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60';
+                  const imageList = (product.pictures && product.pictures.length > 0) ? product.pictures : (product.picture ? [product.picture] : [fallbackImage]);
+                  const selectedImgSrc = imageList[activeImgIndex] || imageList[0];
                   return (
                     <>
                       <motion.div 
@@ -155,6 +156,9 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
                             transition: isZooming ? 'none' : 'transform 0.2s ease-out, transform-origin 0.2s ease-out',
                           }}
                           alt={product.name} 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60';
+                          }}
                         />
                         
                         {/* Visual Indicator Hover Overlay */}

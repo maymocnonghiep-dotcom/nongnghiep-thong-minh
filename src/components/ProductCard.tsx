@@ -18,10 +18,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, onAddToCart
       {/* Product Image */}
       <div className="w-full aspect-square relative overflow-hidden bg-slate-50 shrink-0 rounded-xl border border-slate-100 mb-3">
         <img loading="lazy" 
-          src={getHighResImageUrl(product.picture)} 
+          src={product.picture || (product.pictures && product.pictures.length > 0 ? product.pictures[0] : 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60')} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60';
+          }}
         />
         <div className="absolute top-2 left-2">
           <span className="text-[8px] font-bold text-white bg-brand-primary/80 backdrop-blur-md px-1.5 py-0.5 rounded-md uppercase tracking-wider">
