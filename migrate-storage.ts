@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirestore, initializeFirestore, collection, getDocs, doc, updateDoc } from "firebase/firestore/lite";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import fs from "fs";
 import path from "path";
 
@@ -12,103 +13,86 @@ async function runMigration() {
   const oldBucketName = "titanium-leaf-s07pf.firebasestorage.app";
   const newBucketName = "titanium-leaf-s07pf";
 
-  // Init app
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  console.log("=== BẮT ĐẦU MIGRATION DỮ LIỆU (PARALLEL) ===");
 
-  // Storage
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  const auth = getAuth(app);
+  try {
+    await signInWithEmailAndPassword(auth, "migration1@example.com", "migration1234");
+  } catch (e: any) {
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+      try {
+        await createUserWithEmailAndPassword(auth, "migration1@example.com", "migration1234");
+      } catch (err: any) {
+        console.log("Failed to create user:", err.message);
+      }
+    }
+  }
+
   const oldStorage = getStorage(app, `gs://${oldBucketName}`);
   const newStorage = getStorage(app, `gs://${newBucketName}`);
 
-  // Firestore
   const db = initializeFirestore(app, {
     ignoreUndefinedProperties: true
-  }, firebaseConfig.firestoreDatabaseId);
-
-  console.log("=== BẮT ĐẦU MIGRATION DỮ LIỆU ===");
+  }, firebaseConfig.firestoreDatabaseId || "");
 
   const productsRef = collection(db, "products");
   const snapshot = await getDocs(productsRef);
 
   console.log(`Tìm thấy ${snapshot.docs.length} sản phẩm trong database.`);
 
-  for (const docSnapshot of snapshot.docs) {
+  const uploadAndGetUrl = async (url: string) => {
+    if (typeof url === 'string' && url.includes("firebasestorage.googleapis.com")) {
+      console.log(`Processing URL: ${url.substring(0, 50)}...`);
+      const match = url.match(/\/o\/(.+?)\?/);
+      const originalPath = match ? decodeURIComponent(match[1]) : `products/migrated-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      
+      const newRef = ref(newStorage, originalPath);
+      await uploadBytes(newRef, arrayBuffer, {
+        contentType: response.headers.get("content-type") || "image/jpeg"
+      });
+      
+      return await getDownloadURL(newRef);
+    }
+    return url;
+  };
+
+  const tasks = snapshot.docs.map(async (docSnapshot) => {
     const data = docSnapshot.data();
     let updated = false;
     const updates: any = {};
 
-    // Xử lý trường 'picture' (ảnh đại diện)
-    if (data.picture && typeof data.picture === 'string' && data.picture.includes(oldBucketName)) {
-      console.log(`[${data.sku || docSnapshot.id}] Đang xử lý picture...`);
+    if (data.picture && typeof data.picture === 'string' && data.picture.includes("firebasestorage.googleapis.com")) {
       try {
-        const match = data.picture.match(/\/o\/(.+?)\?/);
-        const originalPath = match ? decodeURIComponent(match[1]) : `products/migrated-${Date.now()}`;
-        
-        // Fetch dữ liệu ảnh cũ
-        const response = await fetch(data.picture);
-        const arrayBuffer = await response.arrayBuffer();
-        
-        // Upload sang kho mới
-        const newRef = ref(newStorage, originalPath);
-        await uploadBytes(newRef, arrayBuffer, {
-          contentType: response.headers.get("content-type") || "image/jpeg"
-        });
-        
-        // Lấy URL mới
-        const newUrl = await getDownloadURL(newRef);
-        updates.picture = newUrl;
-        updated = true;
-        console.log(`  -> Đã copy sang kho mới: ${newUrl}`);
+        updates.picture = await uploadAndGetUrl(data.picture);
+        if (updates.picture !== data.picture) updated = true;
       } catch (err) {
-        console.error(`  -> Lỗi xử lý picture cho ${data.sku}:`, err);
+        console.error(`Lỗi picture cho ${data.sku}:`, err);
       }
     }
 
-    // Xử lý mảng 'pictures' (nếu có)
     if (Array.isArray(data.pictures) && data.pictures.length > 0) {
-      const newPictures = [];
-      let picturesUpdated = false;
-      for (const pic of data.pictures) {
-        if (typeof pic === 'string' && pic.includes(oldBucketName)) {
-          console.log(`[${data.sku || docSnapshot.id}] Đang xử lý ảnh phụ...`);
-          try {
-            const match = pic.match(/\/o\/(.+?)\?/);
-            const originalPath = match ? decodeURIComponent(match[1]) : `products/migrated-${Date.now()}`;
-            
-            const response = await fetch(pic);
-            const arrayBuffer = await response.arrayBuffer();
-            
-            const newRef = ref(newStorage, originalPath);
-            await uploadBytes(newRef, arrayBuffer, {
-              contentType: response.headers.get("content-type") || "image/jpeg"
-            });
-            
-            const newUrl = await getDownloadURL(newRef);
-            newPictures.push(newUrl);
-            picturesUpdated = true;
-            console.log(`  -> Đã copy ảnh phụ sang kho mới: ${newUrl}`);
-          } catch (err) {
-            console.error(`  -> Lỗi xử lý ảnh phụ cho ${data.sku}:`, err);
-            newPictures.push(pic); // Fallback giữ nguyên
-          }
-        } else {
-          newPictures.push(pic);
+      try {
+        const newPictures = await Promise.all(data.pictures.map((pic: string) => uploadAndGetUrl(pic)));
+        if (JSON.stringify(newPictures) !== JSON.stringify(data.pictures)) {
+          updates.pictures = newPictures;
+          updated = true;
         }
-      }
-      
-      if (picturesUpdated) {
-        updates.pictures = newPictures;
-        updated = true;
+      } catch (err) {
+        console.error(`Lỗi pictures cho ${data.sku}:`, err);
       }
     }
 
-    // Cập nhật lại vào Firestore nếu có thay đổi
     if (updated) {
       await updateDoc(doc(db, "products", docSnapshot.id), updates);
-      console.log(`>>> Cập nhật thành công documents cho sản phẩm ${data.sku || docSnapshot.id}!`);
-    } else {
-      console.log(`[${data.sku || docSnapshot.id}] Không có link ảnh từ kho cũ, bỏ qua.`);
+      console.log(`[${data.sku || docSnapshot.id}] Đã cập nhật.`);
     }
-  }
+  });
+
+  await Promise.all(tasks);
 
   console.log("=== HOÀN TẤT MIGRATION ===");
   process.exit(0);
