@@ -135,7 +135,21 @@ export default function ProductDetail({ product, onBack, onAddToCart, onNavigate
               <div className="flex flex-col gap-4 self-start w-full">
                 {(() => {
                   const fallbackImage = 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60';
-                  const imageList = (product.pictures && product.pictures.length > 0) ? product.pictures : (product.picture ? [product.picture] : [fallbackImage]);
+                  let rawImageList = (product.pictures && product.pictures.length > 0) ? product.pictures : (product.picture ? [product.picture] : [fallbackImage]);
+                  
+                  // Ensure coverImage is always first in the gallery
+                  const imageList = [...rawImageList];
+                  const cover = product.coverImage || product.picture;
+                  if (cover) {
+                    const cIdx = imageList.indexOf(cover);
+                    if (cIdx > 0) {
+                      imageList.splice(cIdx, 1);
+                      imageList.unshift(cover);
+                    } else if (cIdx === -1) {
+                      imageList.unshift(cover);
+                    }
+                  }
+
                   const selectedImgSrc = imageList[activeImgIndex] || imageList[0];
                   return (
                     <>

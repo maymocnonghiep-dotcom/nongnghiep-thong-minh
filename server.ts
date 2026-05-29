@@ -1675,7 +1675,7 @@ const PORT = 3000;
       if (!productsLoaded) {
         await ensureProductsLoaded();
       }
-      const { sku, manufacturerCode, name, category, group, subcategoryId, subcategoryName, price, originalPrice, discount, picture, pictures, description, unit, specs } = req.body;
+      const { sku, manufacturerCode, name, category, group, subcategoryId, subcategoryName, price, originalPrice, discount, picture, coverImage, pictures, description, unit, specs } = req.body;
       
       if (!sku || !sku.trim()) {
         return res.status(400).json({ success: false, message: "Mã SKU không được trống!" });
@@ -1701,6 +1701,7 @@ const PORT = 3000;
 
       const fallbackPicture = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
       const finalPicture = picture || (pictures && pictures.length > 0 ? pictures[0] : fallbackPicture);
+      const finalCoverImage = coverImage || finalPicture;
       const finalPictures = Array.isArray(pictures) && pictures.length > 0 ? pictures : [finalPicture];
 
       const newProduct = {
@@ -1716,6 +1717,7 @@ const PORT = 3000;
         originalPrice: parsedOriginalPrice,
         discount: parsedDiscount,
         picture: finalPicture,
+        coverImage: finalCoverImage,
         pictures: finalPictures,
         description: description || "",
         unit: unit ? String(unit).trim() : "Bộ",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin, PlusCircle, Trash2, Plus, Edit3, Search } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Database, ShoppingBag, Eye, Calendar, User, MapPin, PlusCircle, Trash2, Plus, Edit3, Search, Star } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Order } from '../types';
@@ -122,6 +122,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     }
   };
   const [newImagesList, setNewImagesList] = useState<string[]>([]);
+  const [newCoverImage, setNewCoverImage] = useState<string>('');
+  const [editCoverImage, setEditCoverImage] = useState<string>('');
   const [imageInputVal, setImageInputVal] = useState('');
   const [isCategoryHovered, setIsCategoryHovered] = useState(false);
   const [isCategoryInputFocused, setIsCategoryInputFocused] = useState(false);
@@ -313,6 +315,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     setEditUnit(prod.unit || 'Bộ');
     setEditDescription(prod.description || '');
     setEditImage(prod.picture || '');
+    setEditCoverImage(prod.coverImage || prod.picture || '');
     setEditImagesList(prod.pictures || (prod.picture ? [prod.picture] : []));
     setEditImageInputVal('');
     
@@ -395,6 +398,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     const cleanImages = editImagesList.filter(u => u.trim() !== '');
     const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
     const primaryImage = cleanImages.length > 0 ? cleanImages[0] : (editImage.trim() || fallbackImage);
+    const finalCoverImage = editCoverImage && cleanImages.includes(editCoverImage) ? editCoverImage : primaryImage;
     const finalImagesToSend = cleanImages.length > 0 ? cleanImages : [primaryImage];
 
     const bodyData = {
@@ -408,7 +412,8 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       price: parseFloat(editPrice) || 0,
       originalPrice: editOriginalPrice ? parseFloat(editOriginalPrice) : undefined,
       description: editDescription.trim(),
-      picture: primaryImage,
+      picture: primaryImage, // Keep picture synced for backward compatibility
+      coverImage: finalCoverImage,
       pictures: finalImagesToSend,
       unit: editUnit.trim(),
       specs: specsObject
@@ -642,6 +647,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
     const cleanImages = newImagesList.filter(u => u.trim() !== '');
     const fallbackImage = "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=500&auto=format&fit=crop&q=60";
     const primaryImage = cleanImages.length > 0 ? cleanImages[0] : (newImage.trim() || fallbackImage);
+    const finalCoverImage = newCoverImage && cleanImages.includes(newCoverImage) ? newCoverImage : primaryImage;
     const finalImagesToSend = cleanImages.length > 0 ? cleanImages : [primaryImage];
 
     const bodyData = {
@@ -656,6 +662,7 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
       originalPrice: newOriginalPrice ? parseFloat(newOriginalPrice) : undefined,
       description: newDescription.trim(),
       picture: primaryImage,
+      coverImage: finalCoverImage,
       pictures: finalImagesToSend,
       unit: newUnit.trim(),
       specs: specsObject
@@ -1517,45 +1524,54 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                           </div>
                         ) : (
                           <div className="grid grid-cols-3 gap-2 max-h-44 overflow-y-auto">
-                            {newImagesList.map((img, idx) => (
-                              <div key={idx} className="aspect-square relative group rounded-lg border border-slate-200 overflow-hidden bg-slate-50/50 flex items-center justify-center">
+                            {newImagesList.map((img, idx) => {
+                              const isCover = newCoverImage === img || (!newCoverImage && idx === 0);
+                              return (
+                              <div key={idx} className={`aspect-square relative group rounded-lg border-2 overflow-hidden bg-slate-50/50 flex items-center justify-center ${isCover ? 'border-brand-primary' : 'border-transparent hover:border-slate-200'}`}>
                                 <img loading="lazy" 
                                   src={img} 
                                   alt={`Product picture ${idx + 1}`} 
                                   referrerPolicy="no-referrer"
-                                  title="Bấm để xếp làm ảnh đại diện chính"
-                                  onClick={() => {
-                                    // Make primary
-                                    const updated = [...newImagesList];
-                                    const selectItem = updated.splice(idx, 1)[0];
-                                    updated.unshift(selectItem);
-                                    setNewImagesList(updated);
-                                  }}
-                                  className="max-h-full max-w-full object-contain cursor-pointer"
+                                  className="max-h-full max-w-full object-contain"
                                 />
 
-                                {idx === 0 ? (
-                                  <span className="absolute bottom-1 left-1 bg-brand-primary text-[8px] text-white font-extrabold px-1.5 py-0.5 rounded shadow-sm">
-                                    Ảnh chính 🌟
-                                  </span>
-                                ) : (
-                                  <span className="absolute bottom-1 left-1 bg-slate-800/80 text-[8px] text-white font-extrabold px-1 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Xếp #{(idx)}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setNewCoverImage(img);
+                                  }}
+                                  className={`absolute top-1 left-1 p-1 rounded-full transition-all cursor-pointer shadow-sm ${isCover ? 'bg-brand-primary text-white opacity-100' : 'bg-white/90 text-slate-400 hover:text-brand-primary opacity-0 group-hover:opacity-100'}`}
+                                  title="Chọn làm ảnh bìa"
+                                >
+                                  <Star size={12} className={isCover ? 'fill-current' : ''} />
+                                </button>
+
+                                {isCover && (
+                                  <span className="absolute bottom-1 left-1 bg-brand-primary text-[9px] text-white font-extrabold px-1.5 py-0.5 rounded shadow-sm">
+                                    Ảnh bìa
                                   </span>
                                 )}
 
                                 <button 
                                   type="button" 
-                                  onClick={() => {
-                                    setNewImagesList(newImagesList.filter((_, i) => i !== idx));
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const updated = newImagesList.filter((_, i) => i !== idx);
+                                    setNewImagesList(updated);
+                                    if (isCover) {
+                                      setNewCoverImage(updated.length > 0 ? updated[0] : '');
+                                    }
                                   }}
-                                  className="absolute top-1 right-1 bg-rose-100 hover:bg-rose-200 text-rose-600 p-1 rounded-full transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                                  className="absolute top-1 right-1 bg-rose-100 hover:bg-rose-200 text-rose-600 p-1 rounded-full transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-sm"
                                   title="Xóa ảnh"
                                 >
-                                  <Trash2 size={10} />
+                                  <Trash2 size={12} />
                                 </button>
                               </div>
-                            ))}
+                            )})}
                           </div>
                         )}
                       </div>
@@ -2154,33 +2170,54 @@ export default function AdminPanel({ onBack, onLogout, onRefreshProducts }: Admi
                               </div>
                             ) : (
                               <div className="grid grid-cols-4 gap-2 border bg-slate-50/50 p-3 rounded-xl max-h-48 overflow-y-auto">
-                                {editImagesList.map((imgUrl, imgIdx) => (
-                                  <div key={imgIdx} className="relative aspect-square border bg-white rounded-lg p-1 group overflow-hidden">
+                                {editImagesList.map((imgUrl, imgIdx) => {
+                                  const isCover = editCoverImage === imgUrl || (!editCoverImage && imgIdx === 0);
+                                  return (
+                                  <div key={imgIdx} className={`relative aspect-square border-2 bg-white rounded-lg p-1 group overflow-hidden ${isCover ? 'border-brand-primary' : 'border-slate-200 hover:border-slate-300'}`}>
                                     <img loading="lazy" src={imgUrl} className="w-full h-full object-contain" alt="" />
+                                    
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setEditCoverImage(imgUrl);
+                                      }}
+                                      className={`absolute top-1 left-1 p-1 rounded-full transition-all cursor-pointer shadow-sm ${isCover ? 'bg-brand-primary text-white opacity-100 z-10' : 'bg-white/90 text-slate-400 hover:text-brand-primary opacity-0 group-hover:opacity-100 z-10'}`}
+                                      title="Chọn làm ảnh bìa"
+                                    >
+                                      <Star size={12} className={isCover ? 'fill-current' : ''} />
+                                    </button>
+
+                                    {isCover && (
+                                      <span className="absolute bottom-1 left-1 bg-brand-primary text-[9px] text-white font-extrabold px-1.5 py-0.5 rounded shadow-sm z-10">
+                                        Ảnh bìa
+                                      </span>
+                                    )}
+
                                     <button 
                                       type="button"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
                                         const clean = editImagesList.filter((_, subIdx) => subIdx !== imgIdx);
                                         setEditImagesList(clean);
+                                        if (isCover) {
+                                          setEditCoverImage(clean.length > 0 ? clean[0] : '');
+                                        }
                                         if (imgUrl === editImage && clean.length > 0) {
                                           setEditImage(clean[0]);
                                         } else if (clean.length === 0) {
                                           setEditImage('');
                                         }
                                       }}
-                                      className="absolute inset-0 bg-rose-600/90 hover:bg-rose-700/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer duration-100"
+                                      className="absolute inset-0 bg-rose-600/90 hover:bg-rose-700/95 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer duration-100 z-20"
                                     >
-                                      <Trash2 size={16} className="text-white" />
+                                      <Trash2 size={16} className="text-white mb-1" />
+                                      <span className="text-[10px] text-white font-bold">Xóa ảnh</span>
                                     </button>
                                   </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {editImage && (
-                              <div className="pt-2 flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">Ảnh đại diện chính:</span>
-                                <img loading="lazy" src={editImage} className="w-6 h-6 rounded object-cover border border-slate-200" alt="" />
+                                )})}
                               </div>
                             )}
                           </div>

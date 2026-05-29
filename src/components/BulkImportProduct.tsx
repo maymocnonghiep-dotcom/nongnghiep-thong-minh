@@ -289,6 +289,7 @@ export default function BulkImportProduct({ onComplete }: BulkImportProductProps
             price: price,
             unit: unit,
             picture: newPictures.length > 0 ? newPictures[0] : "", // Current structure uses `picture` as primary
+            coverImage: newPictures.length > 0 ? newPictures[0] : "", // Use the first uploaded image as cover
             pictures: newPictures,
             description: description,
             specs: specs,

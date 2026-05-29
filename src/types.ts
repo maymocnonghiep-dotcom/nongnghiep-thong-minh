@@ -17,7 +17,8 @@ export interface Product {
   price: number;
   originalPrice?: number;
   discount?: number;
-  picture: string;
+  picture: string; // Legacy primary picture
+  coverImage?: string; // New explicitly selected cover image URL
   pictures?: string[];
   description: string;
   unit?: string;
