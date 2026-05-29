@@ -26,6 +26,8 @@ import {
 import { mainCategories, subcategoriesMap } from "./categoriesData";
 import { getApiUrl, safeLocalStorage, safeSessionStorage } from "./utils";
 
+import { loginWithFirebase, logoutFirebase, subscribeToAuthChanges } from "./firebase-client";
+
 export default function App() {
   const [currentView, setCurrentView] = useState("home");
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,6 +39,12 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [scrollPos, setScrollPos] = useState(0);
   const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
+
+  useEffect(() => {
+    subscribeToAuthChanges((user) => {
+      setIsAdminAuthenticated(!!user);
+    });
+  }, []);
 
   useEffect(() => {
     if (currentView === "home" && scrollPos > 0) {
@@ -260,20 +268,26 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [products]);
 
-  const handleAdminLogin = (password: string) => {
+  const handleAdminLogin = async (email: string, password: string) => {
     setIsLoggingIn(true);
     setAdminLoginError(null);
 
-    // Giả lập kiểm tra mật khẩu (thực tế nên dùng backend)
-    setTimeout(() => {
-      if (password === "admin123" || password === "agriculture2024") {
-        setIsAdminAuthenticated(true);
-        setIsLoggingIn(false);
+    try {
+      await loginWithFirebase(email, password);
+      // setIsAdminAuthenticated will be updated via subscribeToAuthChanges
+      setIsLoggingIn(false);
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      // Check specific error codes
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setAdminLoginError("Tài khoản hoặc mật khẩu không chính xác.");
+      } else if (err.code === 'auth/too-many-requests') {
+        setAdminLoginError("Tài khoản đang bị tạm khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau.");
       } else {
-        setAdminLoginError("Mã khóa không chính xác. Vui lòng thử lại.");
-        setIsLoggingIn(false);
+        setAdminLoginError("Đăng nhập thất bại. Vui lòng thử lại.");
       }
-    }, 1000);
+      setIsLoggingIn(false);
+    }
   };
 
   const renderContent = () => {
@@ -303,7 +317,8 @@ export default function App() {
         return (
           <AdminPanel
             onBack={() => handleNavigate("home")}
-            onLogout={() => {
+            onLogout={async () => {
+              await logoutFirebase();
               setIsAdminAuthenticated(false);
               handleNavigate("home");
             }}

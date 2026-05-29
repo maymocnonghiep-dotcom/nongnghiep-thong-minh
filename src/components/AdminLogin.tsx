@@ -3,19 +3,20 @@ import { ShieldAlert, Key, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface AdminLoginProps {
-  onLogin: (password: string) => void;
+  onLogin: (email: string, password: string) => void;
   onBack: () => void;
   isLoading?: boolean;
   error?: string | null;
 }
 
 export default function AdminLogin({ onLogin, onBack, isLoading, error }: AdminLoginProps) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.trim()) {
-      onLogin(password);
+    if (email.trim() && password.trim()) {
+      onLogin(email, password);
     }
   };
 
@@ -41,7 +42,20 @@ export default function AdminLogin({ onLogin, onBack, isLoading, error }: AdminL
         <div className="p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Mã khóa quản trị</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Tài khoản quản trị (Email)</label>
+              <div className="relative">
+                <input 
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Mật khẩu</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   <Key size={18} />
@@ -50,9 +64,8 @@ export default function AdminLogin({ onLogin, onBack, isLoading, error }: AdminL
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu admin..."
+                  placeholder="Nhập mật khẩu..."
                   className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all font-mono"
-                  autoFocus
                 />
               </div>
               {error && (
@@ -64,7 +77,7 @@ export default function AdminLogin({ onLogin, onBack, isLoading, error }: AdminL
 
             <button 
               type="submit"
-              disabled={isLoading || !password}
+              disabled={isLoading || !password || !email}
               className="w-full py-4 bg-brand-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (

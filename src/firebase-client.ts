@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getApiUrl } from './utils';
 
 import imageCompression from 'browser-image-compression';
@@ -18,6 +19,26 @@ export async function initFirebaseClient() {
     console.error('Lỗi khi fetch config Firebase Client:', err);
     throw err;
   }
+}
+
+export async function loginWithFirebase(email: string, password: string): Promise<User> {
+  const app = await initFirebaseClient();
+  const auth = getAuth(app);
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  return userCredential.user;
+}
+
+export async function logoutFirebase(): Promise<void> {
+  const app = await initFirebaseClient();
+  const auth = getAuth(app);
+  await signOut(auth);
+}
+
+export function subscribeToAuthChanges(callback: (user: User | null) => void) {
+  initFirebaseClient().then((app) => {
+    const auth = getAuth(app);
+    onAuthStateChanged(auth, callback);
+  }).catch(console.error);
 }
 
 export async function uploadImageToFirebase(file: File): Promise<string> {
