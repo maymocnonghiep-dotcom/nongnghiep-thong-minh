@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Beautiful vivid gradients for high-fidelity rendering -->
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80" /> <!-- Tailwind emerald/green-400 (bright) -->
+      <stop offset="100%" stop-color="#15803D" /> <!-- Tailwind green-700 -->
+    </linearGradient>
+    <linearGradient id="dropGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" /> <!-- sky-400 -->
+      <stop offset="100%" stop-color="#0284C7" /> <!-- sky-600 -->
+    </linearGradient>
+    <linearGradient id="gearGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDBA74" /> <!-- orange-300 -->
+      <stop offset="100%" stop-color="#C2410C" /> <!-- orange-700 -->
+    </linearGradient>
+    
+    <style>
+      /* Precise transparent background style */
+      .bg-rect {
+        fill: none;
+      }
+      /* Adaptive styling for both light and dark modes of browser / devices */
+      .outline-path {
+        stroke: #ffffff;
+        stroke-width: 14;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      }
+      .gear-color {
+        fill: url(#gearGrad);
+      }
+      .drop-color {
+        fill: url(#dropGrad);
+        opacity: 0.95;
+      }
+      .leaf-color {
+        fill: url(#leafGrad);
+      }
+      
+      /* Enhancement for dark mode: soften the outline or add a subtle glow */
+      @media (prefers-color-scheme: dark) {
+        .outline-path {
+          stroke: #1e293b; /* Dark backdrop outline to protect layout and maintain high contrast */
+          stroke-width: 12;
+        }
+        .gear-color {
+          filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.3));
+        }
+        .drop-color {
+          filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.3));
+        }
+        .leaf-color {
+          filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.3));
+        }
+      }
+    </style>
+  </defs>
+
+  <!-- Ground layer -->
+  <rect width="512" height="512" class="bg-rect" />
+
+  <!-- The integrated smart agriculture mark -->
+  <g id="favicon-mark" transform="translate(0, 0)">
+    <!-- 1. Gear backdrop with outlines -->
+    <path class="outline-path" d="M256,120 L275,120 L280,95 L305,103 L300,128 L318,135 L338,118 L358,133 L346,155 L360,167 L385,158 L395,180 L376,198 L385,216 L410,210 L415,235 L392,248 L395,256 L392,264 L415,277 L410,302 L385,296 L376,314 L395,332 L385,354 L360,345 L346,357 L358,379 L338,394 L318,377 L300,384 L305,409 L280,417 L275,392 L256,392 L237,392 L232,417 L207,417 L212,392 L194,384 L174,401 L154,386 L166,364 L152,352 L127,361 L117,339 L136,321 L127,303 L102,309 L97,284 L120,271 L117,256 L120,241 L97,228 L102,203 L127,209 L136,191 L117,173 L127,151 L152,160 L166,148 L154,126 L174,111 L194,128 L212,121 L207,96 L232,88 L237,113 Z" />
+    <path class="gear-color" d="M256,120 L275,120 L280,95 L305,103 L300,128 L318,135 L338,118 L358,133 L346,155 L360,167 L385,158 L395,180 L376,198 L385,216 L410,210 L415,235 L392,248 L395,256 L392,264 L415,277 L410,302 L385,296 L376,314 L395,332 L385,354 L360,345 L346,357 L358,379 L338,394 L318,377 L300,384 L305,409 L280,417 L275,392 L256,392 L237,392 L232,417 L207,417 L212,392 L194,384 L174,401 L154,386 L166,364 L152,352 L127,361 L117,339 L136,321 L127,303 L102,309 L97,284 L120,271 L117,256 L120,241 L97,228 L102,203 L127,209 L136,191 L117,173 L127,151 L152,160 L166,148 L154,126 L174,111 L194,128 L212,121 L207,96 L232,88 L237,113 Z" />
+    
+    <!-- 2. Water drop -->
+    <path class="outline-path" d="M256,140 C170,240 170,360 256,360 C342,360 342,240 256,140 Z" />
+    <path class="drop-color" d="M256,140 C170,240 170,360 256,360 C342,360 342,240 256,140 Z" />
+
+    <!-- 3. Dynamic leaf sprout emerging cleanly from the center water drop core -->
+    <path class="outline-path" d="M256,340 C256,340 310,260 310,210 C310,160 270,140 256,90 C242,140 202,160 202,210 C202,260 256,340 256,340 Z" />
+    <path class="leaf-color" d="M256,340 C256,340 310,260 310,210 C310,160 270,140 256,90 C242,140 202,160 202,210 C202,260 256,340 256,340 Z" />
+
+    <!-- 4. Pure white light glare in the drop to add professional glossy depth -->
+    <path d="M230,240 C220,260 220,280 230,290 C222,280 220,260 226,244 Z" fill="#ffffff" opacity="0.65" />
+    
+    <!-- 5. Subtle green leaf spine for realistic organic leaf design -->
+    <path d="M256,325 L256,160" stroke="#14532D" stroke-width="4.5" stroke-linecap="round" opacity="0.32" />
+  </g>
+</svg>
