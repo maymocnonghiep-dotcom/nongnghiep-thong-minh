@@ -12,6 +12,8 @@ import { Product } from "../types";
 import { subcategoriesMap, matchesSubcategoryPattern } from "../categoriesData";
 import { getApiUrl } from "../utils";
 
+import ProductCountStatus from "./ProductCountStatus";
+
 interface FeaturedProductsProps {
   onProductClick: (product: Product) => void;
   onAddToCart: (product: Product) => void;
@@ -171,7 +173,7 @@ export default function FeaturedProducts({
       id="featured-products"
       className="py-12 px-4 lg:px-8 max-w-7xl mx-auto scroll-mt-24"
     >
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-slate-100 gap-6">
+      <div className="mb-8 pb-6 border-b border-slate-100 flex flex-col gap-5">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-1 tracking-tight">
             {categoryFilter ? `Nhóm: ${categoryFilter}` : "Mặt hàng nổi bật"}
@@ -181,10 +183,17 @@ export default function FeaturedProducts({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">
-            <Filter size={14} /> Sắp xếp
-          </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <ProductCountStatus 
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems} 
+          />
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">
+              <Filter size={14} /> Sắp xếp
+            </div>
 
           <button
             onClick={() => setSortBy("price-asc")}
@@ -218,6 +227,7 @@ export default function FeaturedProducts({
           >
             <Percent size={14} /> Khuyến mãi
           </button>
+        </div>
         </div>
       </div>
 
